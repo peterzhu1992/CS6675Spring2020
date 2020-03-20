@@ -42,7 +42,8 @@ struct bnsParams {
     uint32_t seed = 23;
     uint16_t nHours = 12;
     uint32_t nPeers = 100;
-    uint32_t nMiners = bns::btcNumPools;
+    //uint32_t nMiners = bns::btcNumPools;
+    uint32_t nMiners = 1;
     uint32_t nBootstrap = nPeers;
     double blockSizeFactor = 1.0;
     double blockIntervalFactor = 1.0;
@@ -103,7 +104,7 @@ main (int argc, char *argv[])
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);
-    cmd.AddValue("net", "Set the network stack (mincast or mincast or kadcast)", params.netStack);
+    cmd.AddValue("net", "Set the network stack (mincast or kadcast)", params.netStack);
     cmd.AddValue("topo", "Set the network topology (star or geo)", params.topo);
 
     cmd.AddValue("unsolicited", "Mincast: Enable unsolicited block transmission.", params.unsolicited);
