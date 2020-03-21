@@ -4,17 +4,17 @@ NS_LOG_COMPONENT_DEFINE ("BNSMincastMessages");
 namespace bns {
 
 ns3::TypeId
-MinLengthHeader::GetTypeId (void)
+MincastTypeHeader::GetTypeId (void)
 {
-    static ns3::TypeId tid = ns3::TypeId ("MinLengthHeader")
+    static ns3::TypeId tid = ns3::TypeId ("MincastTypeHeader")
 	.SetParent<Header> ()
-	.AddConstructor<MinLengthHeader> ();
+	.AddConstructor<MincastTypeHeader> ();
     return tid;
 }
 
 
 ns3::TypeId
-MinLengthHeader::GetInstanceTypeId (void) const
+MincastTypeHeader::GetInstanceTypeId (void) const
 {
     NS_LOG_FUNCTION(this);
     return GetTypeId ();
@@ -22,72 +22,7 @@ MinLengthHeader::GetInstanceTypeId (void) const
 
 
 uint32_t 
-MinLengthHeader::GetSerializedSize (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return LEN_SIZE;
-}
-
-
-void 
-MinLengthHeader::Serialize (ns3::Buffer::Iterator start) const
-{
-    NS_LOG_FUNCTION(this);
-    // The data.
-    start.WriteHtonU32 (m_length);
-}
-
-
-uint32_t 
-MinLengthHeader::Deserialize (ns3::Buffer::Iterator start)
-{
-    NS_LOG_FUNCTION(this);
-    m_length = start.ReadNtohU32 ();
-    return LEN_SIZE; // the number of bytes consumed.
-}
-
-
-void 
-MinLengthHeader::Print (std::ostream &os) const
-{
-    NS_LOG_FUNCTION(this);
-    os << "length=" << m_length;
-}
-
-void 
-MinLengthHeader::SetLength (uint32_t length)
-{
-    NS_LOG_FUNCTION(this);
-    m_length = length;
-}
-
-
-uint32_t 
-MinLengthHeader::GetLength (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return m_length;
-}
-ns3::TypeId
-MinTypeHeader::GetTypeId (void)
-{
-    static ns3::TypeId tid = ns3::TypeId ("MinTypeHeader")
-	.SetParent<Header> ()
-	.AddConstructor<MinTypeHeader> ();
-    return tid;
-}
-
-
-ns3::TypeId
-MinTypeHeader::GetInstanceTypeId (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return GetTypeId ();
-}
-
-
-uint32_t 
-MinTypeHeader::GetSerializedSize (void) const
+MincastTypeHeader::GetSerializedSize (void) const
 {
     NS_LOG_FUNCTION(this);
     return TYPE_SIZE;
@@ -95,7 +30,7 @@ MinTypeHeader::GetSerializedSize (void) const
 
 
 void 
-MinTypeHeader::Serialize (ns3::Buffer::Iterator start) const
+MincastTypeHeader::Serialize (ns3::Buffer::Iterator start) const
 {
     NS_LOG_FUNCTION(this);
     // The data.
@@ -104,7 +39,7 @@ MinTypeHeader::Serialize (ns3::Buffer::Iterator start) const
 
 
 uint32_t 
-MinTypeHeader::Deserialize (ns3::Buffer::Iterator start)
+MincastTypeHeader::Deserialize (ns3::Buffer::Iterator start)
 {
     NS_LOG_FUNCTION(this);
     m_type = start.ReadU8 ();
@@ -114,14 +49,14 @@ MinTypeHeader::Deserialize (ns3::Buffer::Iterator start)
 
 
 void 
-MinTypeHeader::Print (std::ostream &os) const
+MincastTypeHeader::Print (std::ostream &os) const
 {
     NS_LOG_FUNCTION(this);
     os << "type=" << m_type;
 }
 
 void 
-MinTypeHeader::SetType (uint8_t type)
+MincastTypeHeader::SetType (uint8_t type)
 {
     NS_LOG_FUNCTION(this);
     m_type = type;
@@ -129,24 +64,25 @@ MinTypeHeader::SetType (uint8_t type)
 
 
 uint8_t 
-MinTypeHeader::GetType (void) const
+MincastTypeHeader::GetType (void) const
 {
     NS_LOG_FUNCTION(this);
     return m_type;
 }
 
+
 ns3::TypeId
-MinInvHeader::GetTypeId (void)
+MincastPingHeader::GetTypeId (void)
 {
-    static ns3::TypeId tid = ns3::TypeId ("MinInvHeader")
+    static ns3::TypeId tid = ns3::TypeId ("MincastPingHeader")
 	.SetParent<Header> ()
-	.AddConstructor<MinInvHeader> ();
+	.AddConstructor<MincastPingHeader> ();
     return tid;
 }
 
 
 ns3::TypeId
-MinInvHeader::GetInstanceTypeId (void) const
+MincastPingHeader::GetInstanceTypeId (void) const
 {
     NS_LOG_FUNCTION(this);
     return GetTypeId ();
@@ -154,75 +90,65 @@ MinInvHeader::GetInstanceTypeId (void) const
 
 
 uint32_t 
-MinInvHeader::GetSerializedSize (void) const
+MincastPingHeader::GetSerializedSize (void) const
 {
     NS_LOG_FUNCTION(this);
-    return MIN_INV_SIZE;
+    return MINCAST_PING_SIZE;
 }
 
 
 void 
-MinInvHeader::Serialize (ns3::Buffer::Iterator start) const
+MincastPingHeader::Serialize (ns3::Buffer::Iterator start) const
 {
     NS_LOG_FUNCTION(this);
     // The data.
-    start.WriteHtonU32 (m_count);
-
-    for (uint64_t obj : m_inventory) {
-        start.WriteHtonU64(obj);
-    }
+    start.WriteHtonU64 (m_senderID);
 }
 
 
 uint32_t 
-MinInvHeader::Deserialize (ns3::Buffer::Iterator start)
+MincastPingHeader::Deserialize (ns3::Buffer::Iterator start)
 {
     NS_LOG_FUNCTION(this);
-    m_count = start.ReadNtohU32();
-
-    for (uint32_t i = 0; i < m_count; ++i) {
-        uint64_t obj = start.ReadNtohU64();
-        m_inventory.push_back(obj);
-    }
-    return MIN_INV_SIZE;
+    m_senderID = start.ReadNtohU64 ();
+    return MINCAST_PING_SIZE; // the number of bytes consumed.
 }
 
 
 void 
-MinInvHeader::Print (std::ostream &os) const
+MincastPingHeader::Print (std::ostream &os) const
 {
     NS_LOG_FUNCTION(this);
-    os << "count: " << m_count;
+    os << "senderID=" << m_senderID;
 }
 
 void 
-MinInvHeader::SetInventory (std::vector<uint64_t> inventory)
+MincastPingHeader::SetSenderId (uint64_t senderID)
 {
     NS_LOG_FUNCTION(this);
-    m_inventory = inventory;
-    m_count = inventory.size();
+    m_senderID = senderID;
 }
 
-std::vector<uint64_t> 
-MinInvHeader::GetInventory (void) const
+
+uint64_t 
+MincastPingHeader::GetSenderId (void) const
 {
     NS_LOG_FUNCTION(this);
-    return m_inventory;
+    return m_senderID;
 }
-
 
 ns3::TypeId
-MinGetDataHeader::GetTypeId (void)
+MincastFindNodeHeader::GetTypeId (void)
 {
-    static ns3::TypeId tid = ns3::TypeId ("MinGetDataHeader")
+    static ns3::TypeId tid = ns3::TypeId ("MincastFindNodeHeader")
 	.SetParent<Header> ()
-	.AddConstructor<MinGetDataHeader> ();
+	.AddConstructor<MincastFindNodeHeader> ();
     return tid;
 }
 
 
 ns3::TypeId
-MinGetDataHeader::GetInstanceTypeId (void) const
+MincastFindNodeHeader::GetInstanceTypeId (void) const
 {
     NS_LOG_FUNCTION(this);
     return GetTypeId ();
@@ -230,156 +156,81 @@ MinGetDataHeader::GetInstanceTypeId (void) const
 
 
 uint32_t 
-MinGetDataHeader::GetSerializedSize (void) const
+MincastFindNodeHeader::GetSerializedSize (void) const
 {
     NS_LOG_FUNCTION(this);
-    return MIN_GETDATA_SIZE;
+    return MINCAST_FINDNODE_SIZE;
 }
 
 
 void 
-MinGetDataHeader::Serialize (ns3::Buffer::Iterator start) const
+MincastFindNodeHeader::Serialize (ns3::Buffer::Iterator start) const
 {
     NS_LOG_FUNCTION(this);
     // The data.
-    start.WriteHtonU32 (m_count);
-
-    for (uint64_t obj : m_inventory) {
-        start.WriteHtonU64(obj);
-    }
+    start.WriteHtonU64 (m_senderID);
+    start.WriteHtonU64 (m_targetID);
 }
 
 
 uint32_t 
-MinGetDataHeader::Deserialize (ns3::Buffer::Iterator start)
+MincastFindNodeHeader::Deserialize (ns3::Buffer::Iterator start)
 {
     NS_LOG_FUNCTION(this);
-    m_count = start.ReadNtohU32();
-
-    for (uint32_t i = 0; i < m_count; ++i) {
-        uint64_t obj = start.ReadNtohU64();
-        m_inventory.push_back(obj);
-    }
-    return MIN_GETDATA_SIZE;
+    m_senderID = start.ReadNtohU64 ();
+    m_targetID = start.ReadNtohU64 ();
+    return MINCAST_FINDNODE_SIZE; // the number of bytes consumed.
 }
 
 
 void 
-MinGetDataHeader::Print (std::ostream &os) const
+MincastFindNodeHeader::Print (std::ostream &os) const
 {
     NS_LOG_FUNCTION(this);
-    os << "count: " << m_count;
+    os << "senderID=" << m_senderID << " targetID=" << m_targetID;
 }
 
 void 
-MinGetDataHeader::SetInventory (std::vector<uint64_t> inventory)
+MincastFindNodeHeader::SetSenderId (uint64_t senderID)
 {
     NS_LOG_FUNCTION(this);
-    m_inventory = inventory;
-    m_count = inventory.size();
-}
-
-std::vector<uint64_t> 
-MinGetDataHeader::GetInventory (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return m_inventory;
-}
-
-
-ns3::TypeId
-MinGetHeadersHeader::GetTypeId (void)
-{
-    static ns3::TypeId tid = ns3::TypeId ("MinGetHeadersHeader")
-	.SetParent<Header> ()
-	.AddConstructor<MinGetHeadersHeader> ();
-    return tid;
-}
-
-
-ns3::TypeId
-MinGetHeadersHeader::GetInstanceTypeId (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return GetTypeId ();
-}
-
-
-uint32_t 
-MinGetHeadersHeader::GetSerializedSize (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return MIN_GETHEADERS_SIZE;
-}
-
-
-void 
-MinGetHeadersHeader::Serialize (ns3::Buffer::Iterator start) const
-{
-    NS_LOG_FUNCTION(this);
-    // The data.
-    start.WriteHtonU64 (m_startID);
-    start.WriteHtonU64 (m_stopID);
-}
-
-
-uint32_t 
-MinGetHeadersHeader::Deserialize (ns3::Buffer::Iterator start)
-{
-    NS_LOG_FUNCTION(this);
-    m_startID = start.ReadNtohU64();
-    m_stopID = start.ReadNtohU64();
-
-    return MIN_GETHEADERS_SIZE;
-}
-
-void 
-MinGetHeadersHeader::Print (std::ostream &os) const
-{
-    NS_LOG_FUNCTION(this);
-    os << "startID: " << m_startID << ", stopID: " << m_stopID;
-}
-
-void 
-MinGetHeadersHeader::SetStartId (uint64_t startID)
-{
-    NS_LOG_FUNCTION(this);
-    m_startID = startID;
+    m_senderID = senderID;
 }
 
 uint64_t 
-MinGetHeadersHeader::GetStartId (void) const
+MincastFindNodeHeader::GetSenderId (void) const
 {
     NS_LOG_FUNCTION(this);
-    return m_startID;
+    return m_senderID;
 }
 
 void 
-MinGetHeadersHeader::SetStopId (uint64_t stopID)
+MincastFindNodeHeader::SetTargetId (uint64_t targetID)
 {
     NS_LOG_FUNCTION(this);
-    m_stopID = stopID;
+    m_targetID = targetID;
 }
 
+
 uint64_t 
-MinGetHeadersHeader::GetStopId (void) const
+MincastFindNodeHeader::GetTargetId (void) const
 {
     NS_LOG_FUNCTION(this);
-    return m_stopID;
+    return m_targetID;
 }
 
 ns3::TypeId
-MinHeadersHeader::GetTypeId (void)
+MincastNodesHeader::GetTypeId (void)
 {
-    static ns3::TypeId tid = ns3::TypeId ("MinHeadersHeader")
+    static ns3::TypeId tid = ns3::TypeId ("MincastNodesHeader")
 	.SetParent<Header> ()
-	.AddConstructor<MinHeadersHeader> ();
+	.AddConstructor<MincastNodesHeader> ();
     return tid;
 }
 
 
 ns3::TypeId
-MinHeadersHeader::GetInstanceTypeId (void) const
+MincastNodesHeader::GetInstanceTypeId (void) const
 {
     NS_LOG_FUNCTION(this);
     return GetTypeId ();
@@ -387,74 +238,124 @@ MinHeadersHeader::GetInstanceTypeId (void) const
 
 
 uint32_t 
-MinHeadersHeader::GetSerializedSize (void) const
+MincastNodesHeader::GetSerializedSize (void) const
 {
     NS_LOG_FUNCTION(this);
-    return MIN_HEADERS_SIZE;
+    return MINCAST_NODES_SIZE; 
 }
 
 
 void 
-MinHeadersHeader::Serialize (ns3::Buffer::Iterator start) const
+MincastNodesHeader::Serialize (ns3::Buffer::Iterator start) const
 {
     NS_LOG_FUNCTION(this);
     // The data.
-    start.WriteHtonU32 (m_count);
+    start.WriteHtonU64 (m_senderID);
+    start.WriteHtonU64 (m_targetID);
+    start.WriteHtonU16 (m_nodeCount);
 
-    for (uint64_t obj : m_inventory) {
-        start.WriteHtonU64(obj);
+    uint8_t tmp_addrBuf[4];
+    for (auto it : m_nodes) {
+        // write node id
+        start.WriteHtonU64(it.first);
+        
+        // serialize and write ip address
+        ns3::Ipv4Address& addr = it.second;
+        addr.Serialize(tmp_addrBuf);
+        for (int j = 0; j < 4; ++j) start.WriteU8(tmp_addrBuf[j]); 
     }
 }
 
 
 uint32_t 
-MinHeadersHeader::Deserialize (ns3::Buffer::Iterator start)
+MincastNodesHeader::Deserialize (ns3::Buffer::Iterator start)
 {
     NS_LOG_FUNCTION(this);
-    m_count = start.ReadNtohU32();
+    m_senderID = start.ReadNtohU64 ();
+    m_targetID = start.ReadNtohU64 ();
+    m_nodeCount = start.ReadNtohU16 ();
+    uint8_t tmp_addrBuf[4];
+    ns3::Ipv4Address tmp_addr;
+    uint64_t tmp_nodeID;
+    for (int i = 0; i < m_nodeCount; ++i) {
+        // read node id
+        tmp_nodeID = start.ReadNtohU64();
 
-    for (uint32_t i = 0; i < m_count; ++i) {
-        uint64_t obj = start.ReadNtohU64();
-        m_inventory.push_back(obj);
+        // read serialized ip address
+        for (int j = 0; j < 4; ++j) tmp_addrBuf[j] = start.ReadU8(); 
+        tmp_addr = ns3::Ipv4Address::Deserialize(tmp_addrBuf);
+
+        // add to map
+        m_nodes[tmp_nodeID] = tmp_addr;
     }
-    return MIN_HEADERS_SIZE;
+    return MINCAST_NODES_SIZE; // the number of bytes consumed.
 }
 
 
 void 
-MinHeadersHeader::Print (std::ostream &os) const
+MincastNodesHeader::Print (std::ostream &os) const
 {
     NS_LOG_FUNCTION(this);
-    os << "count: " << m_count;
+    os << "senderID=" << m_senderID << " targetID=" << m_targetID;
 }
 
 void 
-MinHeadersHeader::SetInventory (std::vector<uint64_t> inventory)
+MincastNodesHeader::SetSenderId (uint64_t senderID)
 {
     NS_LOG_FUNCTION(this);
-    m_inventory = inventory;
-    m_count = inventory.size();
+    m_senderID = senderID;
 }
 
-std::vector<uint64_t> 
-MinHeadersHeader::GetInventory (void) const
+uint64_t 
+MincastNodesHeader::GetSenderId (void) const
 {
     NS_LOG_FUNCTION(this);
-    return m_inventory;
+    return m_senderID;
+}
+
+void 
+MincastNodesHeader::SetTargetId (uint64_t targetID)
+{
+    NS_LOG_FUNCTION(this);
+    m_targetID = targetID;
+}
+
+
+uint64_t 
+MincastNodesHeader::GetTargetId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_targetID;
+}
+
+void 
+MincastNodesHeader::SetNodes (std::unordered_map<uint64_t, ns3::Ipv4Address> nodes)
+{
+    NS_LOG_FUNCTION(this);
+    m_nodes = nodes;
+    m_nodeCount = nodes.size();
+}
+
+
+std::unordered_map<uint64_t, ns3::Ipv4Address> 
+MincastNodesHeader::GetNodes (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_nodes;
 }
 
 ns3::TypeId
-MinGetBlocksHeader::GetTypeId (void)
+MincastChunkHeader::GetTypeId (void)
 {
-    static ns3::TypeId tid = ns3::TypeId ("MinGetBlocksHeader")
+    static ns3::TypeId tid = ns3::TypeId ("MincastChunkHeader")
 	.SetParent<Header> ()
-	.AddConstructor<MinGetBlocksHeader> ();
+	.AddConstructor<MincastChunkHeader> ();
     return tid;
 }
 
 
 ns3::TypeId
-MinGetBlocksHeader::GetInstanceTypeId (void) const
+MincastChunkHeader::GetInstanceTypeId (void) const
 {
     NS_LOG_FUNCTION(this);
     return GetTypeId ();
@@ -462,147 +363,231 @@ MinGetBlocksHeader::GetInstanceTypeId (void) const
 
 
 uint32_t 
-MinGetBlocksHeader::GetSerializedSize (void) const
+MincastChunkHeader::GetSerializedSize (void) const
 {
     NS_LOG_FUNCTION(this);
-    return MIN_GETBLOCKS_SIZE;
+    return MINCAST_BROADCAST_SIZE;
 }
 
 
 void 
-MinGetBlocksHeader::Serialize (ns3::Buffer::Iterator start) const
+MincastChunkHeader::Serialize (ns3::Buffer::Iterator start) const
 {
     NS_LOG_FUNCTION(this);
     // The data.
-    start.WriteHtonU64 (m_startID);
-    start.WriteHtonU64 (m_stopID);
-}
+    start.WriteHtonU64 (m_senderID);
 
-
-uint32_t 
-MinGetBlocksHeader::Deserialize (ns3::Buffer::Iterator start)
-{
-    NS_LOG_FUNCTION(this);
-    m_startID = start.ReadNtohU64();
-    m_stopID = start.ReadNtohU64();
-
-    return MIN_GETBLOCKS_SIZE;
-}
-
-void 
-MinGetBlocksHeader::Print (std::ostream &os) const
-{
-    NS_LOG_FUNCTION(this);
-    os << "startID: " << m_startID << ", stopID: " << m_stopID;
-}
-
-void 
-MinGetBlocksHeader::SetStartId (uint64_t startID)
-{
-    NS_LOG_FUNCTION(this);
-    m_startID = startID;
-}
-
-uint64_t 
-MinGetBlocksHeader::GetStartId (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return m_startID;
-}
-
-void 
-MinGetBlocksHeader::SetStopId (uint64_t stopID)
-{
-    NS_LOG_FUNCTION(this);
-    m_stopID = stopID;
-}
-
-uint64_t 
-MinGetBlocksHeader::GetStopId (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return m_stopID;
-}
-
-ns3::TypeId
-MinBlockHeader::GetTypeId (void)
-{
-    static ns3::TypeId tid = ns3::TypeId ("MinBlockHeader")
-	.SetParent<Header> ()
-	.AddConstructor<MinBlockHeader> ();
-    return tid;
-}
-
-
-ns3::TypeId
-MinBlockHeader::GetInstanceTypeId (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return GetTypeId ();
-}
-
-
-uint32_t 
-MinBlockHeader::GetSerializedSize (void) const
-{
-    NS_LOG_FUNCTION(this);
-    return MIN_BLOCK_SIZE;
-}
-
-
-void 
-MinBlockHeader::Serialize (ns3::Buffer::Iterator start) const
-{
-    NS_LOG_FUNCTION(this);
-    // The data.
     start.WriteHtonU64 (m_blockID);
+    start.WriteHtonU16 (m_chunkID);
     start.WriteHtonU64 (m_prevID);
+    start.WriteHtonU32 (m_blockSize);
+    start.WriteHtonU16 (m_nChunks);
+
+    start.WriteHtonU16 (m_height);
 }
 
 
 uint32_t 
-MinBlockHeader::Deserialize (ns3::Buffer::Iterator start)
+MincastChunkHeader::Deserialize (ns3::Buffer::Iterator start)
 {
     NS_LOG_FUNCTION(this);
+    m_senderID = start.ReadNtohU64 ();
+
     m_blockID = start.ReadNtohU64 ();
+    m_chunkID = start.ReadNtohU16 ();
     m_prevID = start.ReadNtohU64 ();
-    return MIN_BLOCK_SIZE;
+    m_blockSize = start.ReadNtohU32 ();
+    m_nChunks = start.ReadNtohU16 ();
+
+    m_height = start.ReadNtohU16 ();
+    return MINCAST_BROADCAST_SIZE; // the number of bytes consumed.
 }
 
 
 void 
-MinBlockHeader::Print (std::ostream &os) const
+MincastChunkHeader::Print (std::ostream &os) const
+{
+    os << "senderID=" << m_senderID << " blockID=" << m_blockID << " chunkID=" << m_chunkID << " blockSize=" << m_blockSize;
+}
+
+void 
+MincastChunkHeader::SetSenderId (uint64_t senderID)
 {
     NS_LOG_FUNCTION(this);
-    os << "blockID=" << m_blockID;
+    m_senderID = senderID;
+}
+
+uint64_t 
+MincastChunkHeader::GetSenderId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_senderID;
 }
 
 void 
-MinBlockHeader::SetBlockId (uint64_t blockID)
+MincastChunkHeader::SetBlockId (uint64_t blockID)
 {
     NS_LOG_FUNCTION(this);
     m_blockID = blockID;
 }
 
 uint64_t 
-MinBlockHeader::GetBlockId (void) const
+MincastChunkHeader::GetBlockId (void) const
 {
     NS_LOG_FUNCTION(this);
     return m_blockID;
 }
 
 void 
-MinBlockHeader::SetPrevId (uint64_t prevID)
+MincastChunkHeader::SetChunkId (uint16_t chunkID)
+{
+    NS_LOG_FUNCTION(this);
+    m_chunkID = chunkID;
+}
+
+uint16_t 
+MincastChunkHeader::GetChunkId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_chunkID;
+}
+
+void 
+MincastChunkHeader::SetPrevId (uint64_t prevID)
 {
     NS_LOG_FUNCTION(this);
     m_prevID = prevID;
 }
 
+void 
+MincastChunkHeader::SetBlockSize (uint32_t blockSize)
+{
+    NS_LOG_FUNCTION(this);
+    m_blockSize = blockSize;
+}
+
+uint32_t 
+MincastChunkHeader::GetBlockSize (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_blockSize;
+}
+
+uint16_t 
+MincastChunkHeader::GetNChunks (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_nChunks;
+}
+
+void 
+MincastChunkHeader::SetNChunks (uint16_t nChunks)
+{
+    NS_LOG_FUNCTION(this);
+    m_nChunks = nChunks;
+}
+
+
 uint64_t 
-MinBlockHeader::GetPrevId (void) const
+MincastChunkHeader::GetPrevId (void) const
 {
     NS_LOG_FUNCTION(this);
     return m_prevID;
+}
+
+void 
+MincastChunkHeader::SetHeight (uint16_t height)
+{
+    NS_LOG_FUNCTION(this);
+    m_height = height;
+}
+
+uint16_t 
+MincastChunkHeader::GetHeight (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_height;
+}
+
+ns3::TypeId
+MincastReqHeader::GetTypeId (void)
+{
+    static ns3::TypeId tid = ns3::TypeId ("MincastReqHeader")
+	.SetParent<Header> ()
+	.AddConstructor<MincastReqHeader> ();
+    return tid;
+}
+
+
+ns3::TypeId
+MincastReqHeader::GetInstanceTypeId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return GetTypeId ();
+}
+
+
+uint32_t 
+MincastReqHeader::GetSerializedSize (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return MINCAST_REQUEST_SIZE;
+}
+
+
+void 
+MincastReqHeader::Serialize (ns3::Buffer::Iterator start) const
+{
+    NS_LOG_FUNCTION(this);
+    // The data.
+    start.WriteHtonU64 (m_senderID);
+    start.WriteHtonU64 (m_blockID);
+}
+
+
+uint32_t 
+MincastReqHeader::Deserialize (ns3::Buffer::Iterator start)
+{
+    NS_LOG_FUNCTION(this);
+    m_senderID = start.ReadNtohU64 ();
+    m_blockID = start.ReadNtohU64 ();
+
+    return MINCAST_REQUEST_SIZE; // the number of bytes consumed.
+}
+
+
+void 
+MincastReqHeader::Print (std::ostream &os) const
+{
+    os << "senderID=" << m_senderID << " blockID=" << m_blockID;
+}
+
+void 
+MincastReqHeader::SetSenderId (uint64_t senderID)
+{
+    NS_LOG_FUNCTION(this);
+    m_senderID = senderID;
+}
+
+uint64_t 
+MincastReqHeader::GetSenderId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_senderID;
+}
+
+void 
+MincastReqHeader::SetBlockId (uint64_t blockID)
+{
+    NS_LOG_FUNCTION(this);
+    m_blockID = blockID;
+}
+
+uint64_t 
+MincastReqHeader::GetBlockId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_blockID;
 }
 
 }

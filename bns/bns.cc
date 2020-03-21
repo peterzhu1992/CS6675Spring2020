@@ -127,10 +127,10 @@ main (int argc, char *argv[])
     bns::BitcoinMiner::blockSizeFactor = params.blockSizeFactor;
     bns::BitcoinMiner::blockIntervalFactor = params.blockIntervalFactor;
 
-    if (params.unsolicited) {
-        NS_LOG_INFO ("Enabled unsolicited block relay.");
-        bns::MincastNode::minBroadcastType = bns::BroadcastType::UNSOLICITED;
-    }
+    // if (params.unsolicited) {
+    //     NS_LOG_INFO ("Enabled unsolicited block relay.");
+    //     bns::MincastNode::minBroadcastType = bns::BroadcastType::UNSOLICITED;
+    // }
 
     bns::KadcastNode::kadK = params.kadK;
     bns::KadcastNode::kadAlpha = params.kadAlpha;
