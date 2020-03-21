@@ -376,5 +376,6 @@ BitcoinTopologyHelper::RegionToString(Region reg)
         case Region::CN:
             return "CN";
     }
+    return "";
 }
 }
