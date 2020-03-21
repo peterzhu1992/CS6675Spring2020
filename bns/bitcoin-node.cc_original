@@ -4,7 +4,7 @@ NS_LOG_COMPONENT_DEFINE ("BNSBitcoinNode");
 
 namespace bns {
 
-BitcoinNode::BitcoinNode (ns3::Ipv4Address address, bool isMiner, double hashRate) : m_socket(0), m_address (address), m_isRunning(false), m_isMiner(isMiner), m_isSelfish(false), m_isByzantine(false), m_miner(nullptr), m_hashRate(hashRate), m_receivedFirstPartBlock(false), m_receivedFirstFullBlock(false), m_ttfb(0), m_ttlb(0), m_miningTime(0), m_nMinedBlocks(0), m_totalMinedBlocksSize(0)
+BitcoinNode::BitcoinNode (ns3::Ipv4Address address, bool isMiner, double hashRate) : m_socket(0), m_address (address), m_isRunning(false), m_isMiner(isMiner), m_isSelfish(false), m_isByzantine(false), m_miner(nullptr), m_hashRate(hashRate), m_ttfb(0), m_ttlb(0), m_miningTime(0), m_nMinedBlocks(0), m_totalMinedBlocksSize(0), m_receivedFirstPartBlock(false), m_receivedFirstFullBlock(false)
 { 
     NS_LOG_FUNCTION(this);
     m_blockchain = new Blockchain(this);
@@ -34,12 +34,7 @@ BitcoinNode::NotifyNewValidBlock(Block& newBlock)
     if (m_isMiner) {
         // Restart mining immediately, validation delay is added before
         // NotifyNewValidBlock is called
-        //m_miner->StartMining();
-
-        // ###### Mincast ######
-        // Only 1 broadcast, no more restart
-        m_miner->StopMining();
-        // ###### Mincast ######
+        m_miner->StartMining();
     }
 
     if (!m_isSelfish && !m_isByzantine) {

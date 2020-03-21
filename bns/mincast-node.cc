@@ -135,7 +135,7 @@ MincastNode::InitBroadcast (Block& b)
 {
     NS_LOG_FUNCTION(this);
 
-    NS_LOG_FUNCTION("InitBroadcast");
+    NS_LOG_INFO("InitBroadcast");
 
             //NS_LOG_INFO ("Broadcasting BLOCK " << b.blockID << ", prevID: " << b.prevID << ", size: " << b.blockSize << ").");
     for (auto p : m_peers) {
