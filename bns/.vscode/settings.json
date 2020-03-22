@@ -8,6 +8,7 @@
 		"__split_buffer": "cpp",
 		"list": "cpp",
 		"random": "cpp",
-		"algorithm": "cpp"
+		"algorithm": "cpp",
+		"queue": "cpp"
 	}
 }

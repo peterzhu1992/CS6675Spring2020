@@ -38,7 +38,7 @@ double median(std::vector<double> scores);
 struct bnsParams
 {
     uint32_t seed = 23;
-    uint16_t nMinutes = 12;
+    uint16_t nMinutes = 15;
     uint32_t nPeers = 100;
     uint32_t nMiners = bns::btcNumPools;
     uint32_t nBootstrap = nPeers;
@@ -452,89 +452,105 @@ void collectPropagationData(struct bnsParams &params, struct bnsResults &res, ns
     //
     // Here we evaluate time first byte, time to last byte, and network coverage.
     //
-    std::vector<double> ttfbs;
-    std::vector<double> ttlbs;
-
+    std::unordered_map<uint64_t, std::vector<double>> ttfbs;
+    std::unordered_map<uint64_t, std::vector<double>> ttlbs;
+    std::unordered_map<uint64_t, double> firstMiningTime;
+    std::unordered_map<uint64_t, ns3::Time>::iterator itr;
+    std::unordered_map<uint64_t, std::vector<double>>::iterator itr1;
+    std::unordered_map<uint64_t, double>::iterator itr2;
+    std::unordered_map<uint64_t, ns3::Time> time_var;
     ns3::Ptr<bns::BitcoinNode> a;
 
-    double firstMiningTime = 0;
     for (uint32_t i = 0; i < apps.GetN(); ++i)
     {
         a = apps.Get(i)->GetObject<bns::BitcoinNode>();
-        double maybe = a->GetMiningTime().GetMilliSeconds();
-        if (a->IsMiner() && maybe != 0)
+        time_var = a->GetMiningTime();
+        for (itr = time_var.begin(); itr != time_var.end(); itr++)
         {
-            firstMiningTime = maybe;
-            break;
+            double maybe = itr->second.GetMilliSeconds();
+            if (a->IsMiner() && maybe != 0)
+            {
+                if (firstMiningTime.find(itr->first) != firstMiningTime.end())
+                    firstMiningTime[itr->first] = std::min(firstMiningTime[itr->first], maybe);
+                else
+                    firstMiningTime[itr->first] = maybe;
+            }
         }
     }
-    assert(firstMiningTime != 0);
-
-    for (uint32_t i = 0; i < apps.GetN(); ++i)
-    {
-        a = apps.Get(i)->GetObject<bns::BitcoinNode>();
-        double curMiningTime = a->GetMiningTime().GetMilliSeconds();
-        if (a->IsMiner() && curMiningTime != 0)
-        {
-            firstMiningTime = std::min(firstMiningTime, curMiningTime);
-        }
-    }
-    assert(firstMiningTime != 0);
 
     for (uint32_t i = 0; i < apps.GetN(); ++i)
     {
         a = apps.Get(i)->GetObject<bns::BitcoinNode>();
-        int64_t tofb = a->GetTTFB().GetMilliSeconds();
-        if (tofb != 0)
+        time_var = a->GetTTFB();
+        for (itr = time_var.begin(); itr != time_var.end(); itr++)
         {
-            int64_t ttfb = tofb - firstMiningTime;
-            NS_LOG_INFO("" << tofb << " - " << firstMiningTime << " = "
-                           << " " << ttfb << " (TTFB)");
-            ttfbs.push_back(ttfb);
+            int64_t tofb = itr->second.GetMilliSeconds();
+            if (tofb != 0)
+            {
+                int64_t ttfb = tofb - firstMiningTime[itr->first];
+                NS_LOG_INFO("BlockID: " << itr->first << " TTFB: " << ttfb);
+
+                ttfbs[itr->first].push_back(ttfb);
+            }
         }
 
-        int64_t tolb = a->GetTTLB().GetMilliSeconds();
-        if (tolb != 0)
+        time_var = a->GetTTLB();
+        for (itr = time_var.begin(); itr != time_var.end(); itr++)
         {
-            int64_t ttlb;
-            ttlb = tolb - firstMiningTime;
-            NS_LOG_INFO("" << tolb << " - " << firstMiningTime << " = "
-                           << " " << ttlb << " (TTLB)");
-            ttlbs.push_back(ttlb);
+            int64_t tolb = itr->second.GetMilliSeconds();
+            if (tolb != 0)
+            {
+                int64_t ttlb = tolb - firstMiningTime[itr->first];
+                NS_LOG_INFO("BlockID: " << itr->first << " TTLB: " << ttlb);
+                ttlbs[itr->first].push_back(ttlb);
+            }
         }
     }
-
-    int64_t total_ttfb = std::accumulate(std::begin(ttfbs), std::end(ttfbs), 0);
-    NS_LOG_INFO("total_ttfb: " << total_ttfb);
-
-    int64_t total_ttlb = std::accumulate(std::begin(ttlbs), std::end(ttlbs), 0);
-    NS_LOG_INFO("total_ttlb: " << total_ttlb);
-
-    if (!ttfbs.empty() && !ttlbs.empty())
+    int64_t total_ttfb = 0, total_ttlb = 0;
+    double avg_ttfb = 0.0, median_ttfb = 0.0, avg_ttlb = 0.0, median_ttlb = 0.0, coverage = 0.0;
+    double acc_avg_ttfb = 0.0, acc_median_ttfb = 0.0, acc_avg_ttlb = 0.0, acc_median_ttlb = 0.0, acc_coverage = 0.0;
+    NS_LOG_INFO("-----------------------BLOCKWISE STATS-------------------------------");
+    for (itr1 = ttfbs.begin(); itr1 != ttfbs.end(); itr1++)
     {
-        auto avg_ttfb = total_ttfb / ttfbs.size();
-        auto avg_ttlb = total_ttlb / ttlbs.size();
-        double median_ttfb = median(ttfbs);
-        double median_ttlb = median(ttlbs);
-
-        float coverage = (float)ttlbs.size() / (float)params.nPeers;
-
-        NS_LOG_DEBUG("TTFBs size: " << ttfbs.size());
-        NS_LOG_DEBUG("TTLBs size: " << ttlbs.size());
+        total_ttfb = std::accumulate(std::begin(itr1->second), std::end(itr1->second), 0);
+        avg_ttfb = (double)total_ttfb / (double)itr1->second.size();
+        median_ttfb = median(itr1->second);
+        acc_avg_ttfb += avg_ttfb;
+        acc_median_ttfb += median_ttfb;
+        NS_LOG_DEBUG("BlockID: " << itr1->first);
+        NS_LOG_DEBUG("total_ttfb: " << total_ttfb);
+        NS_LOG_DEBUG("TTFBs size: " << itr1->second.size());
         NS_LOG_DEBUG("Avg. TTFB: " << avg_ttfb);
-        NS_LOG_DEBUG("Avg. TTLB: " << avg_ttlb);
         NS_LOG_DEBUG("Median TTFB: " << median_ttfb);
+    }
+    for (itr1 = ttlbs.begin(); itr1 != ttlbs.end(); itr1++)
+    {
+
+        total_ttlb = std::accumulate(std::begin(itr1->second), std::end(itr1->second), 0);
+        avg_ttlb = (double)total_ttlb / (double)itr1->second.size();
+        median_ttlb = median(itr1->second);
+        coverage = (double)itr1->second.size() / (double)params.nPeers;
+        acc_avg_ttlb += avg_ttlb;
+        acc_median_ttlb += median_ttlb;
+        acc_coverage += coverage;
+        NS_LOG_DEBUG("BlockID: " << itr1->first);
+        NS_LOG_DEBUG("total_ttlb: " << total_ttlb);
+        NS_LOG_DEBUG("TTLBs size: " << itr1->second.size());
+        NS_LOG_DEBUG("Avg. TTLB: " << avg_ttlb);
         NS_LOG_DEBUG("Median TTLB: " << median_ttlb);
         NS_LOG_DEBUG("Coverage: " << coverage);
-
-        res.ttfbValues = ttfbs;
-        res.ttlbValues = ttlbs;
-        res.avgTTFB = avg_ttfb;
-        res.avgTTLB = avg_ttlb;
-        res.medianTTFB = median_ttfb;
-        res.medianTTLB = median_ttlb;
-        res.coverage = coverage;
     }
+    NS_LOG_DEBUG("-----------------------OVERALL STATS-------------------------------");
+    res.avgTTFB = acc_avg_ttfb / ttfbs.size();
+    res.avgTTLB = acc_avg_ttlb / ttlbs.size();
+    res.medianTTFB = acc_median_ttfb / ttfbs.size();
+    res.medianTTLB = acc_median_ttlb / ttlbs.size();
+    res.coverage = acc_coverage / ttlbs.size();
+    NS_LOG_DEBUG("Avg. TTFB: " << res.avgTTFB);
+    NS_LOG_DEBUG("Avg. TTLB: " << res.avgTTLB);
+    NS_LOG_DEBUG("Median TTFB: " << res.medianTTFB);
+    NS_LOG_DEBUG("Median TTLB: " << res.medianTTLB);
+    NS_LOG_DEBUG("Coverage: " << res.coverage);
 }
 
 void collectTrafficData(struct bnsParams &params, struct bnsResults &res, ns3::ApplicationContainer apps)
@@ -573,7 +589,7 @@ void writeResults(struct bnsParams &params, struct bnsResults &res)
     std::string end = ".csv";
 
     std::ofstream csv;
-    std::string baseStr = "bns_results";
+    std::string baseStr = "./bns_results";
     fileNameStringStream << baseStr << fndel;
     fileNameStringStream << params.topo << fndel;
     fileNameStringStream << params.netStack << end;

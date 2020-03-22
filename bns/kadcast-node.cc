@@ -657,14 +657,8 @@ void KadcastNode::HandleChunkMessage(ns3::Ipv4Address &senderAddr, nodeid_t &sen
     NS_LOG_FUNCTION(this);
     if (c.blockID == 0)
         return;
-    if (!m_receivedFirstPartBlock)
-    {
-        m_receivedFirstPartBlock = true;
-        if (c.prevID == 0)
-        {
-            SetTTFB(ns3::Simulator::Now());
-        }
-    }
+    m_receivedFirstPartBlock = true;
+    SetTTFB(c.blockID, ns3::Simulator::Now());
 
     if (!m_doneBlocks[c.prevID] && !m_blockchain->HasBlock(c.prevID))
     {
@@ -702,14 +696,8 @@ void KadcastNode::HandleChunkMessage(ns3::Ipv4Address &senderAddr, nodeid_t &sen
 
         NS_LOG_INFO("Got all Chunks (ID: " << b.blockID << ", prevID: " << b.prevID << ", size: " << b.blockSize << ").");
 
-        if (!m_receivedFirstFullBlock)
-        {
-            m_receivedFirstFullBlock = true;
-            if (c.prevID == 0)
-            {
-                SetTTLB(ns3::Simulator::Now());
-            }
-        }
+        m_receivedFirstFullBlock = true;
+        SetTTLB(c.blockID, ns3::Simulator::Now());
         ns3::Time delay = GetValidationDelay(b);
         ns3::Simulator::Schedule(delay, &KadcastNode::NotifyNewBlock, this, b, false);
         chunkMap.clear();
