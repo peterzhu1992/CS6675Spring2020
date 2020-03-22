@@ -32,27 +32,7 @@ BitcoinMiner::StartMining()
 
     ns3::Time nextBlockTime = GetNextBlockTime();
     NS_LOG_INFO("Starting mining on new block. Prev ID:" << prevID << ", Prev Height: " << m_nodeCtx->GetBlockchain()->GetTopBlockHeight() << ", will be found in " << nextBlockTime.GetSeconds() << " seconds.");
-
-    // ###### Mincast ######
-    //NS_LOG_INFO("Test nextBlockTime: " << nextBlockTime.GetSeconds());
-    uint64_t timerBroadcast = 10000;
-    NS_LOG_INFO("");
-    NS_LOG_INFO("");
-    NS_LOG_INFO("");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("Start to broadcast " << timerBroadcast / 1000 << " seconds after the simulation starts");
-    NS_LOG_INFO("");
-    NS_LOG_INFO("");
-    NS_LOG_INFO("");
-    //m_curMiningEvent = ns3::Simulator::Schedule(nextBlockTime, &BitcoinMiner::MineBlock, this, prevID);
-    // ###### Mincast ######
-
-    m_curMiningEvent = ns3::Simulator::Schedule(ns3::Seconds(timerBroadcast), &BitcoinMiner::MineBlock, this, prevID);
+    m_curMiningEvent = ns3::Simulator::Schedule(nextBlockTime, &BitcoinMiner::MineBlock, this, prevID);
 }
 
 void 
@@ -67,8 +47,6 @@ void
 BitcoinMiner::MineBlock(uint64_t prevID)
 {
     NS_LOG_FUNCTION(this);
-    NS_LOG_INFO("MineBlock Now");
-
     if(!m_mining) return; // do nothing if we should not be mining
 	ns3::Ptr<ns3::UniformRandomVariable> rand = ns3::CreateObject<ns3::UniformRandomVariable> ();	
     double min = std::numeric_limits<uint64_t>::min();

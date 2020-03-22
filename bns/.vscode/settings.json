@@ -1,0 +1,13 @@
+{
+	"files.associations": {
+		"iosfwd": "cpp",
+		"cmath": "cpp",
+		"deque": "cpp",
+		"string": "cpp",
+		"vector": "cpp",
+		"__split_buffer": "cpp",
+		"list": "cpp",
+		"random": "cpp",
+		"algorithm": "cpp"
+	}
+}

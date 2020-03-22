@@ -7,7 +7,8 @@
 
 #include "bitcoin-node.h"
 
-namespace bns {
+namespace bns
+{
 
 class BitcoinNode;
 
@@ -28,15 +29,16 @@ struct Block
     uint32_t blockSize;
 };
 
-class Blockchain {
-    public:
-    Blockchain(BitcoinNode * const nodeCtx);
+class Blockchain
+{
+public:
+    Blockchain(BitcoinNode *const nodeCtx);
 
     /**
      * \brief Return a newly initialized Block structure, height set to 0
      * \return new block
      */
-    static Block GetNewBlock (uint64_t blockID, uint64_t prevID, uint32_t blockSize);
+    static Block GetNewBlock(uint64_t blockID, uint64_t prevID, uint32_t blockSize);
 
     /**
      * \brief Add a block to the blockchain, calculate its height and update
@@ -44,7 +46,6 @@ class Blockchain {
      * \return true if topBlock was update, else false
      */
     bool AddBlock(Block b);
-
 
     /**
      * \brief Get the identifier of the highest known block
@@ -64,27 +65,25 @@ class Blockchain {
     /**
      * \brief Returns if the node has a block
      */
-    bool HasBlock (uint64_t blockID);
+    bool HasBlock(uint64_t blockID);
 
     /**
      * \brief Calculate block height
      */
     uint32_t GetBlockHeight(uint64_t blockID);
-    private: 
 
-
+private:
     std::unordered_map<uint64_t, Block> m_blockMap;
 
     // in this map, we store all blocks that were postponed because their
     // prevBlock wasn't present. mapping prevBlockID -> set(waiting blocks)
     std::unordered_map<uint64_t, std::set<uint64_t>> m_waitMap;
 
-    BitcoinNode * const m_nodeCtx;
+    BitcoinNode *const m_nodeCtx;
 
     // topBlock should always be the last block of the longest chain we seen first
     uint64_t m_topBlockID;
-
 };
 
-}
+} // namespace bns
 #endif

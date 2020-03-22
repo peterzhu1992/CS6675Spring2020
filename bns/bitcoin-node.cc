@@ -34,12 +34,7 @@ BitcoinNode::NotifyNewValidBlock(Block& newBlock)
     if (m_isMiner) {
         // Restart mining immediately, validation delay is added before
         // NotifyNewValidBlock is called
-        //m_miner->StartMining();
-
-        // ###### Mincast ######
-        // Only 1 broadcast, no more restart
-        m_miner->StopMining();
-        // ###### Mincast ######
+        m_miner->StartMining();
     }
 
     if (!m_isSelfish && !m_isByzantine) {

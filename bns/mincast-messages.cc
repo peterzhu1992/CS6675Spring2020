@@ -590,4 +590,84 @@ MincastReqHeader::GetBlockId (void) const
     return m_blockID;
 }
 
+ns3::TypeId
+MincastInformHeader::GetTypeId (void)
+{
+    static ns3::TypeId tid = ns3::TypeId ("MincastInformHeader")
+	.SetParent<Header> ()
+	.AddConstructor<MincastInformHeader> ();
+    return tid;
+}
+
+
+ns3::TypeId
+MincastInformHeader::GetInstanceTypeId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return GetTypeId ();
+}
+
+
+uint32_t 
+MincastInformHeader::GetSerializedSize (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return MINCAST_INFORM_SIZE;
+}
+
+
+void 
+MincastInformHeader::Serialize (ns3::Buffer::Iterator start) const
+{
+    NS_LOG_FUNCTION(this);
+    // The data.
+    start.WriteHtonU64 (m_senderID);
+    start.WriteHtonU64 (m_blockID);
+}
+
+
+uint32_t 
+MincastInformHeader::Deserialize (ns3::Buffer::Iterator start)
+{
+    NS_LOG_FUNCTION(this);
+    m_senderID = start.ReadNtohU64 ();
+    m_blockID = start.ReadNtohU64 ();
+
+    return MINCAST_INFORM_SIZE; // the number of bytes consumed.
+}
+
+
+void 
+MincastInformHeader::Print (std::ostream &os) const
+{
+    os << "senderID=" << m_senderID << " blockID=" << m_blockID;
+}
+
+void 
+MincastInformHeader::SetSenderId (uint64_t senderID)
+{
+    NS_LOG_FUNCTION(this);
+    m_senderID = senderID;
+}
+
+uint64_t 
+MincastInformHeader::GetSenderId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_senderID;
+}
+
+void 
+MincastInformHeader::SetBlockId (uint64_t blockID)
+{
+    NS_LOG_FUNCTION(this);
+    m_blockID = blockID;
+}
+
+uint64_t 
+MincastInformHeader::GetBlockId (void) const
+{
+    NS_LOG_FUNCTION(this);
+    return m_blockID;
+}
 }

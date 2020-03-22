@@ -6,52 +6,49 @@
 #include "ns3/core-module.h"
 #include "ns3/data-rate.h"
 #include "ns3/network-module.h"
-#include "ns3/internet-module.h" 
+#include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/point-to-point-layout-module.h"
 #include "ns3/mpi-interface.h"
 
-
 #include "bitcoin-node.h"
 #include "kadcast-node.h"
-//#include "mincast-node.h"
+#include "vanilla-node.h"
 #include "bitcoin-data.h"
 #include "bitcoin-topology-helper.h"
-
 #include "mincast-node.h"
 
-NS_LOG_COMPONENT_DEFINE ("BNS");
-
+NS_LOG_COMPONENT_DEFINE("BNS");
 
 static double totalTraffic = 0;
 static void ReceivedPacket(ns3::Ptr<const ns3::Packet> packet);
-void SetReceivedCallback (bns::BitcoinTopologyHelper& topology);
+void SetReceivedCallback(bns::BitcoinTopologyHelper &topology);
 
-ns3::ApplicationContainer buildStarTopology (struct bnsParams& params);
-ns3::ApplicationContainer buildGeoTopology (struct bnsParams& params);
+ns3::ApplicationContainer buildStarTopology(struct bnsParams &params);
+ns3::ApplicationContainer buildGeoTopology(struct bnsParams &params);
 
-void evaluate(struct bnsParams& params, ns3::ApplicationContainer apps);
-void collectPropagationData(struct bnsParams& params, struct bnsResults& res, ns3::ApplicationContainer apps);
-void collectTrafficData(struct bnsParams& params, struct bnsResults& res, ns3::ApplicationContainer apps);
-void writeResults(struct bnsParams& params, struct bnsResults& res);
+void evaluate(struct bnsParams &params, ns3::ApplicationContainer apps);
+void collectPropagationData(struct bnsParams &params, struct bnsResults &res, ns3::ApplicationContainer apps);
+void collectTrafficData(struct bnsParams &params, struct bnsResults &res, ns3::ApplicationContainer apps);
+void writeResults(struct bnsParams &params, struct bnsResults &res);
 
 double median(std::vector<double> scores);
 
-struct bnsParams {
+struct bnsParams
+{
     uint32_t seed = 23;
-    uint16_t nHours = 12;
+    uint16_t nMinutes = 12;
     uint32_t nPeers = 100;
-    //uint32_t nMiners = bns::btcNumPools;
-    uint32_t nMiners = 1;
+    uint32_t nMiners = bns::btcNumPools;
     uint32_t nBootstrap = nPeers;
     double blockSizeFactor = 1.0;
     double blockIntervalFactor = 1.0;
     double byzantineFactor = 0.0;
-    std::string netStack = "mincast";
+    std::string netStack = "vanilla";
     std::string topo = "geo";
-    
-    // mincast specific
+
+    // vanilla specific
     bool unsolicited = false;
 
     // kadcast specific
@@ -65,7 +62,8 @@ struct bnsParams {
     std::string starHubDataRate = "100Gbps";
 };
 
-struct bnsResults {
+struct bnsResults
+{
     std::vector<double> ttfbValues;
     std::vector<double> ttlbValues;
     double avgTTFB = 0.0;
@@ -79,87 +77,99 @@ struct bnsResults {
     double necessaryTraffic = 0;
 };
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    ns3::LogComponentEnableAll (ns3::LOG_PREFIX_ALL);
-    ns3::LogComponentEnable ("BNS", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSBitcoinTopologyHelper", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSBitcoinNode", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSBlockchain", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSBitcoinMiner", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSKadcastNode", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSMincastNode", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSMincastMessages", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSKadcastMessages", ns3::LOG_LEVEL_INFO);
-
+    ns3::LogComponentEnableAll(ns3::LOG_PREFIX_ALL);
+    ns3::LogComponentEnable("BNS", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSBitcoinTopologyHelper", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSBitcoinNode", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSBlockchain", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSBitcoinMiner", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSKadcastNode", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSVanillaNode", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSVanillaMessages", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSKadcastMessages", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSMincastNode", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable("BNSMincastMessages", ns3::LOG_LEVEL_INFO);
 
     struct bnsParams params;
     ns3::CommandLine cmd;
     cmd.AddValue("seed", "Seed number", params.seed);
-    cmd.AddValue("nHours", "Number of hours (simulation time) the network should run.", params.nHours);
+    cmd.AddValue("nMinutes", "Number of minutes (simulation time) the network should run.", params.nMinutes);
     cmd.AddValue("nPeers", "Number of peers to build", params.nPeers);
     cmd.AddValue("nBootstrap", "Number of bootstrap peers", params.nBootstrap);
     cmd.AddValue("nMiners", "Number of miners", params.nMiners);
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);
-    cmd.AddValue("net", "Set the network stack (mincast or kadcast)", params.netStack);
+    cmd.AddValue("net", "Set the network stack (vanilla or kadcast or mincast)", params.netStack);
     cmd.AddValue("topo", "Set the network topology (star or geo)", params.topo);
 
-    cmd.AddValue("unsolicited", "Mincast: Enable unsolicited block transmission.", params.unsolicited);
+    cmd.AddValue("unsolicited", "Vanilla: Enable unsolicited block transmission.", params.unsolicited);
 
-    cmd.AddValue("kadK", "Kadcast: Set the bucket size k.", params.kadK);
-    cmd.AddValue("kadAlpha", "Kadcast: Set the alpha factor determining the number of parallel lookup requests.", params.kadAlpha);
-    cmd.AddValue("kadBeta", "Kadcast: Set the beta factor determining the number of parallel broadcast operations.", params.kadBeta);
-    cmd.AddValue("kadFecOverhead", "Kadcast: Set the FEC overhead factor.", params.kadFecOverhead);
+    cmd.AddValue("kadK", "Kadcast or Mincast: Set the bucket size k.", params.kadK);
+    cmd.AddValue("kadAlpha", "Kadcast or Mincast: Set the alpha factor determining the number of parallel lookup requests.", params.kadAlpha);
+    cmd.AddValue("kadBeta", "Kadcast or Mincast: Set the beta factor determining the number of parallel broadcast operations.", params.kadBeta);
+    cmd.AddValue("kadFecOverhead", "Kadcast or Mincast: Set the FEC overhead factor.", params.kadFecOverhead);
 
     cmd.AddValue("starLeafDataRate", "Set the data rate for each link", params.starLeafDataRate);
     cmd.AddValue("starHubRate", "Set the data rate for the star network hub", params.starHubDataRate);
 
-    cmd.Parse (argc, argv);
+    cmd.Parse(argc, argv);
 
-    if (params.nMiners != 1 && params.nMiners % bns::btcNumPools != 0) {
-        NS_LOG_INFO ("Please pick either a single miner, or a multiple of 16 (as there are 16 major bitcoin pools).");
+    if (params.nMiners != 1 && params.nMiners % bns::btcNumPools != 0)
+    {
+        NS_LOG_INFO("Please pick either a single miner, or a multiple of 16 (as there are 16 major bitcoin pools).");
         return -1;
     }
 
     bns::BitcoinMiner::blockSizeFactor = params.blockSizeFactor;
     bns::BitcoinMiner::blockIntervalFactor = params.blockIntervalFactor;
 
-    // if (params.unsolicited) {
-    //     NS_LOG_INFO ("Enabled unsolicited block relay.");
-    //     bns::MincastNode::minBroadcastType = bns::BroadcastType::UNSOLICITED;
-    // }
+    if (params.unsolicited)
+    {
+        NS_LOG_INFO("Enabled unsolicited block relay.");
+        bns::VanillaNode::vanBroadcastType = bns::BroadcastType::UNSOLICITED;
+    }
 
     bns::KadcastNode::kadK = params.kadK;
     bns::KadcastNode::kadAlpha = params.kadAlpha;
     bns::KadcastNode::kadBeta = params.kadBeta;
     bns::KadcastNode::kadFecOverhead = params.kadFecOverhead;
 
-    ns3::RngSeedManager::SetSeed (params.seed);  
+    bns::MincastNode::kadK = params.kadK;
+    bns::MincastNode::kadAlpha = params.kadAlpha;
+    bns::MincastNode::kadBeta = params.kadBeta;
+    bns::MincastNode::kadFecOverhead = params.kadFecOverhead;
+
+    ns3::RngSeedManager::SetSeed(params.seed);
 
     ns3::ApplicationContainer apps;
-    if (params.topo == "star") {
+    if (params.topo == "star")
+    {
         apps = buildStarTopology(params);
-    } else {
+    }
+    else
+    {
         apps = buildGeoTopology(params);
     }
 
     // set byzantine nodes randomly
     uint32_t nApps = apps.GetN();
-    uint32_t nByzantine = std::min(nApps, (uint32_t) (params.nPeers * params.byzantineFactor));
+    uint32_t nByzantine = std::min(nApps, (uint32_t)(params.nPeers * params.byzantineFactor));
     std::set<uint32_t> byzApps;
-    
+
     uint32_t toGo = nByzantine;
 
-    while (toGo > 0) {
-        ns3::Ptr<ns3::UniformRandomVariable> x = ns3::CreateObject<ns3::UniformRandomVariable> ();
-        x->SetAttribute ("Min", ns3::DoubleValue (0));
-        x->SetAttribute ("Max", ns3::DoubleValue (nApps - 1));
-        uint32_t randomIndex = x->GetInteger ();
+    while (toGo > 0)
+    {
+        ns3::Ptr<ns3::UniformRandomVariable> x = ns3::CreateObject<ns3::UniformRandomVariable>();
+        x->SetAttribute("Min", ns3::DoubleValue(0));
+        x->SetAttribute("Max", ns3::DoubleValue(nApps - 1));
+        uint32_t randomIndex = x->GetInteger();
 
-        if (byzApps.find(randomIndex) == std::end(byzApps)) {
+        if (byzApps.find(randomIndex) == std::end(byzApps))
+        {
             ns3::Ptr<bns::BitcoinNode> app = apps.Get(randomIndex)->GetObject<bns::BitcoinNode>();
             app->SetByzantine(true);
             byzApps.insert(randomIndex);
@@ -171,23 +181,22 @@ main (int argc, char *argv[])
 
     //pointToPoint.EnablePcapAll ("KadcastTest");
     //ns3::Ipv4GlobalRoutingHelper g;
-    //ns3::Ptr<ns3::OutputStreamWrapper> routingStream = ns3::Create<ns3::OutputStreamWrapper> 
+    //ns3::Ptr<ns3::OutputStreamWrapper> routingStream = ns3::Create<ns3::OutputStreamWrapper>
     //    ("routes.txt", std::ios::out);
     //g.PrintRoutingTableAllAt (ns3::Seconds (2), routingStream);
 
-
     NS_LOG_INFO("Running Simulator!");
-    ns3::Simulator::Stop (ns3::Hours(params.nHours));
-    ns3::Simulator::Run ();
+    ns3::Simulator::Stop(ns3::Minutes(params.nMinutes));
+    ns3::Simulator::Run();
 
     evaluate(params, apps);
 
-    ns3::Simulator::Destroy ();
-    NS_LOG_INFO ("Simulation finished!");
+    ns3::Simulator::Destroy();
+    NS_LOG_INFO("Simulation finished!");
     return 0;
 }
 
-void evaluate(struct bnsParams& params, ns3::ApplicationContainer apps)
+void evaluate(struct bnsParams &params, ns3::ApplicationContainer apps)
 {
     struct bnsResults res;
     collectPropagationData(params, res, apps);
@@ -196,79 +205,124 @@ void evaluate(struct bnsParams& params, ns3::ApplicationContainer apps)
 }
 
 ns3::ApplicationContainer
-buildGeoTopology (struct bnsParams& params) {
+buildGeoTopology(struct bnsParams &params)
+{
     ns3::ApplicationContainer apps;
     bns::BitcoinTopologyHelper topology(params.nPeers, params.seed);
 
     SetReceivedCallback(topology);
 
-    ns3::Ptr<ns3::UniformRandomVariable> leafIndexVar = ns3::CreateObject<ns3::UniformRandomVariable> ();   
-    leafIndexVar->SetAttribute ("Min", ns3::DoubleValue (0));
-    leafIndexVar->SetAttribute ("Max", ns3::DoubleValue (params.nPeers-1));
+    ns3::Ptr<ns3::UniformRandomVariable> leafIndexVar = ns3::CreateObject<ns3::UniformRandomVariable>();
+    leafIndexVar->SetAttribute("Min", ns3::DoubleValue(0));
+    leafIndexVar->SetAttribute("Max", ns3::DoubleValue(params.nPeers - 1));
 
     std::vector<uint32_t> miners;
     uint32_t toAdd = params.nMiners;
-    while (toAdd > 0) {
+    while (toAdd > 0)
+    {
         uint32_t randIndex = leafIndexVar->GetInteger();
         auto it = std::find(std::begin(miners), std::end(miners), randIndex);
-        if (it == std::end(miners)) {
+        if (it == std::end(miners))
+        {
             miners.push_back(randIndex);
             toAdd--;
-        } 
+        }
     }
 
-    for (uint32_t i = 0; i < params.nPeers; i++){
+    for (uint32_t i = 0; i < params.nPeers; i++)
+    {
         ns3::Ipv4Address nodeAddr = topology.GetTopologyAddress(i);
         //NS_LOG_INFO("Setting up node " << topology.GetTopologyLeaf(i)->GetId() << ": " << nodeAddr);
-        ns3::Ptr<bns::BitcoinNode> app; 
-        if (params.netStack == "kadcast") {
-            auto it = std::find(std::begin(miners), std::end(miners), i); 
-            if (it != std::end(miners)) {// if the current index is a miner
+        ns3::Ptr<bns::BitcoinNode> app;
+        if (params.netStack == "kadcast")
+        {
+            auto it = std::find(std::begin(miners), std::end(miners), i);
+            if (it != std::end(miners))
+            {                                                       // if the current index is a miner
                 auto index = std::distance(std::begin(miners), it); // get its index in miner list
                 double poolShare;
-                if (params.nMiners == 1) {
+                if (params.nMiners == 1)
+                {
                     poolShare = 1.0;
-                } else {
-                    poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
+                }
+                else
+                {
+                    poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools] / (params.nMiners / bns::btcNumPools);
                 }
                 double hashRate = poolShare * bns::btcTotalHashRate;
-                app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, true, hashRate);
+                app = ns3::CreateObject<bns::KadcastNode>(nodeAddr, true, hashRate);
                 apps.Add(app);
-            } else { 
-                app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, false, 0);
+            }
+            else
+            {
+                app = ns3::CreateObject<bns::KadcastNode>(nodeAddr, false, 0);
                 apps.Add(app);
             }
         }
-	else if (params.netStack == "mincast") {
-            auto it = std::find(std::begin(miners), std::end(miners), i); 
-            if (it != std::end(miners)) {// if the current index is a miner
+        else if (params.netStack == "mincast")
+        {
+            auto it = std::find(std::begin(miners), std::end(miners), i);
+            if (it != std::end(miners))
+            {                                                       // if the current index is a miner
                 auto index = std::distance(std::begin(miners), it); // get its index in miner list
                 double poolShare;
-                if (params.nMiners == 1) {
+                if (params.nMiners == 1)
+                {
                     poolShare = 1.0;
-                } else {
-                    poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
+                }
+                else
+                {
+                    poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools] / (params.nMiners / bns::btcNumPools);
                 }
                 double hashRate = poolShare * bns::btcTotalHashRate;
-                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, hashRate);
+                app = ns3::CreateObject<bns::MincastNode>(nodeAddr, true, hashRate);
                 apps.Add(app);
-            } else { 
-                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, false, 0);
+            }
+            else
+            {
+                app = ns3::CreateObject<bns::MincastNode>(nodeAddr, false, 0);
                 apps.Add(app);
             }
         }
-        topology.GetTopologyLeaf(i)->AddApplication (app);
-        app->SetStartTime(ns3::Seconds (2.0));
+        else
+        {
+            auto it = std::find(std::begin(miners), std::end(miners), i);
+            if (it != std::end(miners))
+            {                                                       // if the current index is a miner
+                auto index = std::distance(std::begin(miners), it); // get its index in miner list
+                double poolShare;
+                if (params.nMiners == 1)
+                {
+                    poolShare = 1.0;
+                }
+                else
+                {
+                    poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools] / (params.nMiners / bns::btcNumPools);
+                }
+                double hashRate = poolShare * bns::btcTotalHashRate;
+                app = ns3::CreateObject<bns::VanillaNode>(nodeAddr, true, hashRate);
+                apps.Add(app);
+            }
+            else
+            {
+                app = ns3::CreateObject<bns::VanillaNode>(nodeAddr, false, 0);
+                apps.Add(app);
+            }
+        }
+        topology.GetTopologyLeaf(i)->AddApplication(app);
+        app->SetStartTime(ns3::Seconds(2.0));
         //app->SetStopTime(ns3::Minutes (10.0));
 
         // Bootstrap
         std::vector<ns3::Ipv4Address> peerAddresses;
         uint32_t toBootstrap = std::min(params.nBootstrap, params.nPeers);
-        while (toBootstrap > 0) {
-            uint32_t randIndex = leafIndexVar->GetInteger ();
+        while (toBootstrap > 0)
+        {
+            uint32_t randIndex = leafIndexVar->GetInteger();
             ns3::Ipv4Address addr = topology.GetTopologyAddress(randIndex);
             auto it = std::find(std::begin(peerAddresses), std::end(peerAddresses), addr);
-            if (it == std::end(peerAddresses)) {
+            if (it == std::end(peerAddresses))
+            {
                 peerAddresses.push_back(addr);
                 toBootstrap--;
             }
@@ -278,93 +332,112 @@ buildGeoTopology (struct bnsParams& params) {
     return apps;
 }
 
-ns3::ApplicationContainer buildStarTopology (struct bnsParams& params) {
+ns3::ApplicationContainer buildStarTopology(struct bnsParams &params)
+{
     ns3::ApplicationContainer apps;
-    ns3::Ptr<ns3::UniformRandomVariable> x = ns3::CreateObject<ns3::UniformRandomVariable> ();
-    x->SetAttribute ("Min", ns3::DoubleValue (0));
-    x->SetAttribute ("Max", ns3::DoubleValue (bns::btcLatencies.size() - 1));
+    ns3::Ptr<ns3::UniformRandomVariable> x = ns3::CreateObject<ns3::UniformRandomVariable>();
+    x->SetAttribute("Min", ns3::DoubleValue(0));
+    x->SetAttribute("Max", ns3::DoubleValue(bns::btcLatencies.size() - 1));
 
     ns3::PointToPointHelper pointToPoint;
-    pointToPoint.SetDeviceAttribute ("DataRate", ns3::StringValue (params.starLeafDataRate));
-    pointToPoint.SetDeviceAttribute ("Mtu", ns3::UintegerValue (1500));
-    pointToPoint.SetChannelAttribute ("Delay", ns3::StringValue ("20ms"));
+    pointToPoint.SetDeviceAttribute("DataRate", ns3::StringValue(params.starLeafDataRate));
+    pointToPoint.SetDeviceAttribute("Mtu", ns3::UintegerValue(1500));
+    pointToPoint.SetChannelAttribute("Delay", ns3::StringValue("20ms"));
 
-    ns3::QueueSize qs ("100MB");
-    pointToPoint.SetQueue("ns3::DropTailQueue",  "MaxSize", ns3::QueueSizeValue(qs));
+    ns3::QueueSize qs("100MB");
+    pointToPoint.SetQueue("ns3::DropTailQueue", "MaxSize", ns3::QueueSizeValue(qs));
 
-    ns3::PointToPointStarHelper star (params.nPeers, pointToPoint);
+    ns3::PointToPointStarHelper star(params.nPeers, pointToPoint);
 
     ns3::InternetStackHelper stack;
-    star.InstallStack (stack);
+    star.InstallStack(stack);
 
-    star.AssignIpv4Addresses (ns3::Ipv4AddressHelper ("10.0.0.0", "255.255.255.0"));
+    star.AssignIpv4Addresses(ns3::Ipv4AddressHelper("10.0.0.0", "255.255.255.0"));
 
-    ns3::Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+    ns3::Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
-    ns3::Ptr<ns3::UniformRandomVariable> indexVar = ns3::CreateObject<ns3::UniformRandomVariable> ();	
-    indexVar->SetAttribute ("Min", ns3::DoubleValue (0));
-    indexVar->SetAttribute ("Max", ns3::DoubleValue (params.nPeers-1));
+    ns3::Ptr<ns3::UniformRandomVariable> indexVar = ns3::CreateObject<ns3::UniformRandomVariable>();
+    indexVar->SetAttribute("Min", ns3::DoubleValue(0));
+    indexVar->SetAttribute("Max", ns3::DoubleValue(params.nPeers - 1));
 
     uint32_t nDevices = star.GetHub()->GetNDevices();
 
-    for (uint32_t i = 0; i < nDevices-1; i++) {
-        ns3::Ptr<ns3::PointToPointNetDevice> dev = ns3::DynamicCast<ns3::PointToPointNetDevice> (star.GetHub()->GetDevice(i));
+    for (uint32_t i = 0; i < nDevices - 1; i++)
+    {
+        ns3::Ptr<ns3::PointToPointNetDevice> dev = ns3::DynamicCast<ns3::PointToPointNetDevice>(star.GetHub()->GetDevice(i));
         dev->SetDataRate(ns3::DataRate(params.starHubDataRate));
         dev->TraceConnectWithoutContext("MacRx", ns3::MakeCallback(&ReceivedPacket));
     }
 
-    for (uint32_t i = 0; i < params.nPeers; ++i) {
-        auto steps = x->GetInteger ();
+    for (uint32_t i = 0; i < params.nPeers; ++i)
+    {
+        auto steps = x->GetInteger();
         double delay = bns::btcLatencies[steps] / 4;
         std::string delayString = "" + std::to_string(delay) + "ms";
-        star.GetSpokeNode (i)->GetDevice(0)->GetChannel()->SetAttribute("Delay", ns3::StringValue(delayString));
+        star.GetSpokeNode(i)->GetDevice(0)->GetChannel()->SetAttribute("Delay", ns3::StringValue(delayString));
 
         ns3::Ipv4Address nodeAddr = star.GetSpokeIpv4Address(i);
 
-        ns3::Ptr<bns::BitcoinNode> app; 
-        if (params.netStack == "kadcast") {
-            if (i < params.nMiners) {
-                if (params.nMiners % bns::btcNumPools == 0) {
-                    double poolShare = bns::btcHashRateDistribution[i % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
+        ns3::Ptr<bns::BitcoinNode> app;
+        if (params.netStack == "kadcast")
+        {
+            if (i < params.nMiners)
+            {
+                if (params.nMiners % bns::btcNumPools == 0)
+                {
+                    double poolShare = bns::btcHashRateDistribution[i % bns::btcNumPools] / (params.nMiners / bns::btcNumPools);
                     double hashRate = poolShare * bns::btcTotalHashRate;
-                    app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, true, hashRate);
-                    apps.Add(app);
-                } else if (params.nMiners == 1) {
-                    app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, true, bns::btcTotalHashRate);
+                    app = ns3::CreateObject<bns::KadcastNode>(nodeAddr, true, hashRate);
                     apps.Add(app);
                 }
-            } else { 
-                app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, false, 0);
+                else if (params.nMiners == 1)
+                {
+                    app = ns3::CreateObject<bns::KadcastNode>(nodeAddr, true, bns::btcTotalHashRate);
+                    apps.Add(app);
+                }
+            }
+            else
+            {
+                app = ns3::CreateObject<bns::KadcastNode>(nodeAddr, false, 0);
                 apps.Add(app);
             }
         }
-	else if (params.netStack == "mincast") {
-            if (i < params.nMiners) {
-                if (params.nMiners % bns::btcNumPools == 0) {
-                    double poolShare = bns::btcHashRateDistribution[i % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
+        else
+        {
+            if (i < params.nMiners)
+            {
+                if (params.nMiners % bns::btcNumPools == 0)
+                {
+                    double poolShare = bns::btcHashRateDistribution[i % bns::btcNumPools] / (params.nMiners / bns::btcNumPools);
                     double hashRate = poolShare * bns::btcTotalHashRate;
-                    app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, hashRate);
-                    apps.Add(app);
-                } else if (params.nMiners == 1) {
-                    app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, bns::btcTotalHashRate);
+                    app = ns3::CreateObject<bns::VanillaNode>(nodeAddr, true, hashRate);
                     apps.Add(app);
                 }
-            } else { 
-                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, false, 0);
+                else if (params.nMiners == 1)
+                {
+                    app = ns3::CreateObject<bns::VanillaNode>(nodeAddr, true, bns::btcTotalHashRate);
+                    apps.Add(app);
+                }
+            }
+            else
+            {
+                app = ns3::CreateObject<bns::VanillaNode>(nodeAddr, false, 0);
                 apps.Add(app);
             }
         }
-        star.GetSpokeNode (i)->AddApplication (app);
-        app->SetStartTime(ns3::Seconds (2.0));
+        star.GetSpokeNode(i)->AddApplication(app);
+        app->SetStartTime(ns3::Seconds(2.0));
         //app->SetStopTime(ns3::Minutes (10.0));
 
         std::vector<ns3::Ipv4Address> peerAddresses;
         uint32_t toBootstrap = params.nBootstrap;
-        while (toBootstrap > 0) {
-            uint32_t randIndex = indexVar->GetInteger ();
+        while (toBootstrap > 0)
+        {
+            uint32_t randIndex = indexVar->GetInteger();
             ns3::Ipv4Address addr = star.GetSpokeIpv4Address(randIndex);
             auto it = std::find(std::begin(peerAddresses), std::end(peerAddresses), addr);
-            if (it == std::end(peerAddresses)) {
+            if (it == std::end(peerAddresses))
+            {
                 peerAddresses.push_back(addr);
                 toBootstrap--;
             }
@@ -374,10 +447,9 @@ ns3::ApplicationContainer buildStarTopology (struct bnsParams& params) {
     return apps;
 }
 
-void
-collectPropagationData(struct bnsParams& params, struct bnsResults& res, ns3::ApplicationContainer apps)
+void collectPropagationData(struct bnsParams &params, struct bnsResults &res, ns3::ApplicationContainer apps)
 {
-    // 
+    //
     // Here we evaluate time first byte, time to last byte, and network coverage.
     //
     std::vector<double> ttfbs;
@@ -386,64 +458,74 @@ collectPropagationData(struct bnsParams& params, struct bnsResults& res, ns3::Ap
     ns3::Ptr<bns::BitcoinNode> a;
 
     double firstMiningTime = 0;
-    for (uint32_t i = 0; i < apps.GetN(); ++i) {
+    for (uint32_t i = 0; i < apps.GetN(); ++i)
+    {
         a = apps.Get(i)->GetObject<bns::BitcoinNode>();
         double maybe = a->GetMiningTime().GetMilliSeconds();
-        if (a->IsMiner() && maybe != 0) {
+        if (a->IsMiner() && maybe != 0)
+        {
             firstMiningTime = maybe;
             break;
         }
     }
     assert(firstMiningTime != 0);
 
-    for (uint32_t i = 0; i < apps.GetN(); ++i) {
+    for (uint32_t i = 0; i < apps.GetN(); ++i)
+    {
         a = apps.Get(i)->GetObject<bns::BitcoinNode>();
         double curMiningTime = a->GetMiningTime().GetMilliSeconds();
-        if (a->IsMiner() && curMiningTime != 0) {
+        if (a->IsMiner() && curMiningTime != 0)
+        {
             firstMiningTime = std::min(firstMiningTime, curMiningTime);
         }
     }
     assert(firstMiningTime != 0);
 
-    for (uint32_t i = 0; i < apps.GetN(); ++i) {
+    for (uint32_t i = 0; i < apps.GetN(); ++i)
+    {
         a = apps.Get(i)->GetObject<bns::BitcoinNode>();
         int64_t tofb = a->GetTTFB().GetMilliSeconds();
-        if (tofb != 0) {
+        if (tofb != 0)
+        {
             int64_t ttfb = tofb - firstMiningTime;
-            NS_LOG_INFO("" << tofb << " - " << firstMiningTime << " = " << " " << ttfb << " (TTFB)");
+            NS_LOG_INFO("" << tofb << " - " << firstMiningTime << " = "
+                           << " " << ttfb << " (TTFB)");
             ttfbs.push_back(ttfb);
         }
 
         int64_t tolb = a->GetTTLB().GetMilliSeconds();
-        if (tolb != 0) {
+        if (tolb != 0)
+        {
             int64_t ttlb;
             ttlb = tolb - firstMiningTime;
-            NS_LOG_INFO("" << tolb << " - " << firstMiningTime << " = " << " " << ttlb << " (TTLB)");
+            NS_LOG_INFO("" << tolb << " - " << firstMiningTime << " = "
+                           << " " << ttlb << " (TTLB)");
             ttlbs.push_back(ttlb);
         }
     }
 
     int64_t total_ttfb = std::accumulate(std::begin(ttfbs), std::end(ttfbs), 0);
-    NS_LOG_INFO ("total_ttfb: " << total_ttfb);
+    NS_LOG_INFO("total_ttfb: " << total_ttfb);
 
     int64_t total_ttlb = std::accumulate(std::begin(ttlbs), std::end(ttlbs), 0);
-    NS_LOG_INFO ("total_ttlb: " << total_ttlb);
+    NS_LOG_INFO("total_ttlb: " << total_ttlb);
 
-    if (!ttfbs.empty() && !ttlbs.empty()) {
+    if (!ttfbs.empty() && !ttlbs.empty())
+    {
         auto avg_ttfb = total_ttfb / ttfbs.size();
         auto avg_ttlb = total_ttlb / ttlbs.size();
         double median_ttfb = median(ttfbs);
         double median_ttlb = median(ttlbs);
 
-        float coverage = (float) ttlbs.size() / (float) params.nPeers;
+        float coverage = (float)ttlbs.size() / (float)params.nPeers;
 
-        NS_LOG_DEBUG ("TTFBs size: " << ttfbs.size());
-        NS_LOG_DEBUG ("TTLBs size: " << ttlbs.size());
-        NS_LOG_DEBUG ("Avg. TTFB: " << avg_ttfb);
-        NS_LOG_DEBUG ("Avg. TTLB: " << avg_ttlb);
-        NS_LOG_DEBUG ("Median TTFB: " << median_ttfb);
-        NS_LOG_DEBUG ("Median TTLB: " << median_ttlb);
-        NS_LOG_DEBUG ("Coverage: " << coverage);
+        NS_LOG_DEBUG("TTFBs size: " << ttfbs.size());
+        NS_LOG_DEBUG("TTLBs size: " << ttlbs.size());
+        NS_LOG_DEBUG("Avg. TTFB: " << avg_ttfb);
+        NS_LOG_DEBUG("Avg. TTLB: " << avg_ttlb);
+        NS_LOG_DEBUG("Median TTFB: " << median_ttfb);
+        NS_LOG_DEBUG("Median TTLB: " << median_ttlb);
+        NS_LOG_DEBUG("Coverage: " << coverage);
 
         res.ttfbValues = ttfbs;
         res.ttlbValues = ttlbs;
@@ -455,8 +537,7 @@ collectPropagationData(struct bnsParams& params, struct bnsResults& res, ns3::Ap
     }
 }
 
-void
-collectTrafficData (struct bnsParams& params, struct bnsResults& res, ns3::ApplicationContainer apps)
+void collectTrafficData(struct bnsParams &params, struct bnsResults &res, ns3::ApplicationContainer apps)
 {
     //
     // Here we evaluate the stale rate and the total network traffic and the overhead
@@ -464,18 +545,19 @@ collectTrafficData (struct bnsParams& params, struct bnsResults& res, ns3::Appli
     uint32_t topBlockHeight = 0;
     double nMinedBlocks = 0;
     double totalMinedBlocksSize = 0;
-    for (uint32_t i = 0; i < params.nPeers; ++i) {
+    for (uint32_t i = 0; i < params.nPeers; ++i)
+    {
         ns3::Ptr<bns::BitcoinNode> app = apps.Get(i)->GetObject<bns::BitcoinNode>();
         topBlockHeight = std::max(topBlockHeight, app->GetBlockchain()->GetTopBlockHeight());
         nMinedBlocks += app->GetNMinedBlocks();
         totalMinedBlocksSize += app->GetTotalMinedBlocksSize();
     }
     double staleRate = (nMinedBlocks - topBlockHeight) / nMinedBlocks;
-    double necessaryTraffic = totalMinedBlocksSize * (params.nPeers-1);
-    double overheadRatio = (totalTraffic - necessaryTraffic)/necessaryTraffic;
+    double necessaryTraffic = totalMinedBlocksSize * (params.nPeers - 1);
+    double overheadRatio = (totalTraffic - necessaryTraffic) / necessaryTraffic;
 
-    NS_LOG_INFO ("Total number of mined blocks: " << nMinedBlocks << ", top block Height: " << topBlockHeight);
-    NS_LOG_INFO ("Stale rate: " << staleRate << ", totalTraffic: " << totalTraffic << ", overheadRatio: " << overheadRatio);
+    NS_LOG_INFO("Total number of mined blocks: " << nMinedBlocks << ", top block Height: " << topBlockHeight);
+    NS_LOG_INFO("Stale rate: " << staleRate << ", totalTraffic: " << totalTraffic << ", overheadRatio: " << overheadRatio);
     res.staleRate = staleRate;
     res.totalTraffic = totalTraffic;
     res.necessaryTraffic = necessaryTraffic;
@@ -483,24 +565,60 @@ collectTrafficData (struct bnsParams& params, struct bnsResults& res, ns3::Appli
     return;
 }
 
-void
-writeResults(struct bnsParams& params, struct bnsResults& res)
+void writeResults(struct bnsParams &params, struct bnsResults &res)
 {
-        std::stringstream fileNameStringStream;
-        std::string fndel = "_";
-        std::string del = ",";
-        std::string end = ".csv";
+    std::stringstream fileNameStringStream;
+    std::string fndel = "_";
+    std::string del = ",";
+    std::string end = ".csv";
 
-        std::ofstream csv;
-        std::string baseStr = "bns_results";
-        fileNameStringStream << baseStr << fndel;
-        fileNameStringStream << params.topo<< fndel;
-        fileNameStringStream << params.netStack << end;
+    std::ofstream csv;
+    std::string baseStr = "bns_results";
+    fileNameStringStream << baseStr << fndel;
+    fileNameStringStream << params.topo << fndel;
+    fileNameStringStream << params.netStack << end;
 
-        csv.open(fileNameStringStream.str(), std::ios::app);
+    csv.open(fileNameStringStream.str(), std::ios::app);
 
+    csv << params.seed << del;
+    csv << params.nMinutes << del;
+    csv << params.nPeers << del;
+    csv << params.nMiners << del;
+    csv << params.nBootstrap << del;
+    csv << params.blockSizeFactor << del;
+    csv << params.blockIntervalFactor << del;
+    csv << params.byzantineFactor << del;
+    csv << params.netStack << del;
+    csv << params.topo << del;
+    csv << params.kadK << del;
+    csv << params.kadAlpha << del;
+    csv << params.kadBeta << del;
+    csv << params.kadFecOverhead << del;
+    csv << res.avgTTFB << del;
+    csv << res.avgTTLB << del;
+    csv << res.medianTTFB << del;
+    csv << res.medianTTLB << del;
+    csv << res.staleRate << del;
+    csv << res.coverage << del;
+    csv << res.overheadRatio << del;
+    csv << res.totalTraffic << del;
+    csv << res.necessaryTraffic;
+    csv << std::endl;
+    csv.close();
+
+    std::string ext = "ttfbValues";
+    std::stringstream ttfbFileNameStringStream;
+    ttfbFileNameStringStream << baseStr << fndel;
+    ttfbFileNameStringStream << ext << fndel;
+    ttfbFileNameStringStream << params.topo << fndel;
+    ttfbFileNameStringStream << params.netStack << end;
+
+    csv.open(ttfbFileNameStringStream.str(), std::ios::app);
+
+    for (auto e : res.ttfbValues)
+    {
         csv << params.seed << del;
-        csv << params.nHours << del;
+        csv << params.nMinutes << del;
         csv << params.nPeers << del;
         csv << params.nMiners << del;
         csv << params.nBootstrap << del;
@@ -513,78 +631,43 @@ writeResults(struct bnsParams& params, struct bnsResults& res)
         csv << params.kadAlpha << del;
         csv << params.kadBeta << del;
         csv << params.kadFecOverhead << del;
-        csv << res.avgTTFB << del;
-        csv << res.avgTTLB << del;
-        csv << res.medianTTFB << del;
-        csv << res.medianTTLB << del;
-        csv << res.staleRate << del;
-        csv << res.coverage << del;
-        csv << res.overheadRatio << del;
-        csv << res.totalTraffic << del;
-        csv << res.necessaryTraffic;
+        csv << e;
         csv << std::endl;
-        csv.close();
+    }
+    csv.close();
 
-        std::string ext = "ttfbValues";
-        std::stringstream ttfbFileNameStringStream;
-        ttfbFileNameStringStream << baseStr << fndel;
-        ttfbFileNameStringStream << ext << fndel;
-        ttfbFileNameStringStream << params.topo << fndel;
-        ttfbFileNameStringStream << params.netStack << end;
+    ext = "ttlbValues";
+    std::stringstream ttlbFileNameStringStream;
+    ttlbFileNameStringStream << baseStr << fndel;
+    ttlbFileNameStringStream << ext << fndel;
+    ttlbFileNameStringStream << params.topo << fndel;
+    ttlbFileNameStringStream << params.netStack << end;
 
-        csv.open(ttfbFileNameStringStream.str(), std::ios::app);
+    csv.open(ttlbFileNameStringStream.str(), std::ios::app);
 
-        for (auto e : res.ttfbValues) {
-            csv << params.seed << del;
-            csv << params.nHours << del;
-            csv << params.nPeers << del;
-            csv << params.nMiners << del;
-            csv << params.nBootstrap << del;
-            csv << params.blockSizeFactor << del;
-            csv << params.blockIntervalFactor << del;
-            csv << params.byzantineFactor << del;
-            csv << params.netStack << del;
-            csv << params.topo << del;
-            csv << params.kadK << del;
-            csv << params.kadAlpha << del;
-            csv << params.kadBeta << del;
-            csv << params.kadFecOverhead << del;
-            csv << e;
-            csv << std::endl;
-        }
-        csv.close();
-
-        ext = "ttlbValues";
-        std::stringstream ttlbFileNameStringStream;
-        ttlbFileNameStringStream << baseStr << fndel;
-        ttlbFileNameStringStream << ext << fndel;
-        ttlbFileNameStringStream << params.topo << fndel;
-        ttlbFileNameStringStream << params.netStack << end;
-
-        csv.open(ttlbFileNameStringStream.str(), std::ios::app);
-
-        for (auto e : res.ttlbValues) {
-            csv << params.seed << del;
-            csv << params.nHours << del;
-            csv << params.nPeers << del;
-            csv << params.nMiners << del;
-            csv << params.nBootstrap << del;
-            csv << params.blockSizeFactor << del;
-            csv << params.blockIntervalFactor << del;
-            csv << params.byzantineFactor << del;
-            csv << params.netStack << del;
-            csv << params.topo << del;
-            csv << params.kadK << del;
-            csv << params.kadAlpha << del;
-            csv << params.kadBeta << del;
-            csv << params.kadFecOverhead << del;
-            csv << e;
-            csv << std::endl;
-        }
-        csv.close();
+    for (auto e : res.ttlbValues)
+    {
+        csv << params.seed << del;
+        csv << params.nMinutes << del;
+        csv << params.nPeers << del;
+        csv << params.nMiners << del;
+        csv << params.nBootstrap << del;
+        csv << params.blockSizeFactor << del;
+        csv << params.blockIntervalFactor << del;
+        csv << params.byzantineFactor << del;
+        csv << params.netStack << del;
+        csv << params.topo << del;
+        csv << params.kadK << del;
+        csv << params.kadAlpha << del;
+        csv << params.kadBeta << del;
+        csv << params.kadFecOverhead << del;
+        csv << e;
+        csv << std::endl;
+    }
+    csv.close();
 }
 
-static void ReceivedPacket(ns3::Ptr<const ns3::Packet> packet) 
+static void ReceivedPacket(ns3::Ptr<const ns3::Packet> packet)
 {
     totalTraffic += packet->GetSize();
 }
@@ -595,7 +678,7 @@ double median(std::vector<double> scores)
 
     if (size == 0)
     {
-        return 0;  // Undefined, really.
+        return 0; // Undefined, really.
     }
     else if (size == 1)
     {
@@ -608,21 +691,22 @@ double median(std::vector<double> scores)
         {
             return (scores[size / 2 - 1] + scores[size / 2]) / 2;
         }
-        else 
+        else
         {
             return scores[size / 2];
         }
     }
 }
 
-void 
-SetReceivedCallback (bns::BitcoinTopologyHelper& topology)
+void SetReceivedCallback(bns::BitcoinTopologyHelper &topology)
 {
     std::vector<bns::Region> regs = {{bns::Region::NA, bns::Region::EU, bns::Region::AS, bns::Region::OC, bns::Region::AF, bns::Region::SA, bns::Region::CN}};
-    for (auto r : regs) {
+    for (auto r : regs)
+    {
         ns3::NetDeviceContainer devs = topology.GetIntracontinentalDevices(r);
-        for (uint32_t i = 0; i < devs.GetN(); i++) {
-            ns3::Ptr<ns3::PointToPointNetDevice> dev = ns3::DynamicCast<ns3::PointToPointNetDevice> (devs.Get(i));
+        for (uint32_t i = 0; i < devs.GetN(); i++)
+        {
+            ns3::Ptr<ns3::PointToPointNetDevice> dev = ns3::DynamicCast<ns3::PointToPointNetDevice>(devs.Get(i));
             dev->TraceConnectWithoutContext("MacRx", ns3::MakeCallback(&ReceivedPacket));
         }
     }

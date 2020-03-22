@@ -144,6 +144,11 @@ class MincastNode : public BitcoinNode
          */
         void HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t& senderID, uint64_t blockID);
 
+        /**
+         * \brief Handle a inform block request message.
+         */
+        void HandleInformMessage(ns3::Ipv4Address &senderAddr, nodeid_t& senderID, uint64_t blockID);
+
         /** 
          * \brief Send a ping message to a node
          */
@@ -173,6 +178,11 @@ class MincastNode : public BitcoinNode
          * \brief Send a block request message
          */
         void SendRequestMessage(ns3::Ipv4Address &outgoingAddress, uint64_t blockID);
+
+        /**
+         * \brief Send a block inform message
+         */
+        void SendInformMessage(ns3::Ipv4Address &outgoingAddress, uint64_t blockID);
 
         /**
          * \brief Initializ a node lookup
