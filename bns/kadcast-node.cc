@@ -97,7 +97,7 @@ void KadcastNode::StartApplication() // Called at time specified by Start
     x->SetAttribute("Mean", ns3::DoubleValue(100));
     x->SetAttribute("Variance", ns3::DoubleValue(30));
     ns3::Time refreshTime = ns3::Seconds(x->GetValue());
-    //ns3::Simulator::Schedule (refreshTime, &KadcastNode::PeriodicRefresh, this);
+    ns3::Simulator::Schedule (refreshTime, &KadcastNode::PeriodicRefresh, this);
 
     if (m_isMiner)
     {

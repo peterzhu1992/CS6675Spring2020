@@ -93,6 +93,16 @@ main (int argc, char *argv[])
     ns3::LogComponentEnable ("BNSMincastMessages", ns3::LOG_LEVEL_INFO);
     ns3::LogComponentEnable ("BNSKadcastMessages", ns3::LOG_LEVEL_INFO);
 
+    ns3::LogComponentEnable ("BNS", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinTopologyHelper", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBlockchain", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinMiner", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSKadcastNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSMincastNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSMincastMessages", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSKadcastMessages", ns3::LOG_LEVEL_WARN);
+
 
     struct bnsParams params;
     ns3::CommandLine cmd;

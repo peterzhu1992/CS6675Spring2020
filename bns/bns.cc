@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     bns::MincastNode::kadBeta = params.kadBeta;
     bns::MincastNode::kadFecOverhead = params.kadFecOverhead;
 
-    ns3::RngSeedManager::SetSeed(params.seed);
+    ns3::RngSeedManager::SetSeed(time(0));
 
     ns3::ApplicationContainer apps;
     if (params.topo == "star")

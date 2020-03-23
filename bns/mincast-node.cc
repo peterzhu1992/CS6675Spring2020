@@ -97,7 +97,7 @@ void MincastNode::StartApplication() // Called at time specified by Start
     x->SetAttribute("Mean", ns3::DoubleValue(100));
     x->SetAttribute("Variance", ns3::DoubleValue(30));
     ns3::Time refreshTime = ns3::Seconds(x->GetValue());
-    //ns3::Simulator::Schedule (refreshTime, &MincastNode::PeriodicRefresh, this);
+    ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
 
     if (m_isMiner)
     {
@@ -298,6 +298,7 @@ void MincastNode::BroadcastBlock(Block &b)
                 toQuery--;
             }
         }
+        std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
         int nodeAddrLimit = nodeAddresses.size() - 2, ct = 0;
         for (auto nAddr : nodeAddresses)
@@ -315,6 +316,7 @@ void MincastNode::BroadcastBlock(Block &b)
 
 void MincastNode::SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height)
 {
+    NS_LOG_INFO("Sending block: " << b.blockID << " to: " << outgoingAddress);
     std::map<uint16_t, MinChunk> chunkMap = Chunkify(b);
 
     std::vector<uint16_t> chunksToSend;
@@ -734,7 +736,7 @@ void MincastNode::HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t &s
 {
     if (!m_blockchain->HasBlock(blockID))
     {
-        NS_LOG_WARN("Requested block I do not have. This should never happen!");
+        NS_LOG_INFO("Requested block I do not have. This should never happen!");
         return;
     }
     Block b = m_blockchain->GetBlockById(blockID);
@@ -745,14 +747,14 @@ void MincastNode::HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t &s
 
 void MincastNode::HandleInformMessage(ns3::Ipv4Address &senderAddr, nodeid_t &senderID, uint64_t blockID)
 {
-    if (m_seenBroadcasts[blockID].size() > 0)
-    {
-        NS_LOG_INFO("Already started download of block");
-        return;
-    }
-    int r = rand() % 6 + 2;
+    // if (m_seenBroadcasts[blockID].size() > 0)
+    // {
+    //     NS_LOG_INFO("Already started download of block");
+    //     return;
+    // }
+    int r = 0;
     ns3::Time delay = ns3::Seconds(r);
-    ns3::Simulator::Schedule(delay, &MincastNode::RequestMissingBlock, this, senderAddr, blockID);
+    ns3::Simulator::Schedule(delay, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
     return;
 }
 
@@ -1041,7 +1043,32 @@ void MincastNode::PeriodicRefresh()
     x->SetAttribute("Mean", ns3::DoubleValue(MINCAST_BUCKET_REFRESH_TIMEOUT));
     x->SetAttribute("Variance", ns3::DoubleValue(100));
     ns3::Time refreshTime = ns3::Seconds(x->GetValue());
-    //ns3::Simulator::Schedule (refreshTime, &MincastNode::PeriodicRefresh, this);
+    ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
+}
+
+void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
+{
+    if (m_doneBlocks[blockID] || m_blockchain->HasBlock(blockID))
+    {
+        NS_LOG_INFO("Caught up to block: " << blockID);
+        return;
+    }
+    if (m_seenBroadcasts[blockID].size() > 0)
+    {
+        NS_LOG_INFO("Already started download of block");
+        return;
+    }
+
+    SendRequestMessage(senderAddr, blockID);
+
+    // ns3::Ptr<ns3::NormalRandomVariable> x = ns3::CreateObject<ns3::NormalRandomVariable>();
+    // x->SetAttribute("Mean", ns3::DoubleValue(8000));
+    // x->SetAttribute("Variance", ns3::DoubleValue(1000));
+
+    // ns3::Time nextRequestTime = ns3::MilliSeconds(x->GetValue());
+    // ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
+
+    NS_LOG_INFO("Requesting missing block " << blockID << " from " << senderAddr);
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
