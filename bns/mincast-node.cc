@@ -32,6 +32,8 @@ uint16_t MincastNode::kadBeta = 3;
 
 double MincastNode::kadFecOverhead = 0.25;
 
+bool MincastNode::mincastUseScores = false;
+
 MincastNode::MincastNode(ns3::Ipv4Address address, bool isMiner, double hashRate) : BitcoinNode(address, isMiner, hashRate), m_sending(false)
 {
     NS_LOG_FUNCTION(this);
@@ -57,7 +59,7 @@ void MincastNode::DoDispose(void)
 // Application Methods
 void MincastNode::StartApplication() // Called at time specified by Start
 {
-    NS_LOG_INFO("Starting node " << GetNode()->GetId() << ": " << m_address << " / " << EncodeID(m_nodeID));
+    NS_LOG_INFO("Starting node " << GetNode()->GetId() << ": " << m_address << " / " << EncodeID(m_nodeID) << " / mincastUseScores: " << std::boolalpha << mincastUseScores);
     m_isRunning = true;
     if (!m_socket)
     {
@@ -320,7 +322,6 @@ void MincastNode::BroadcastBlock(Block &b)
         // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
         int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
-        NS_LOG_INFO(kadBeta << " " << ct << " " << nodeAddresses.size());
 
         for (auto nAddr : nodeAddresses)
         {
@@ -1111,7 +1112,7 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     }
     ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
 
-    NS_LOG_INFO("Requesting INFORMed block " << blockID << " from " << senderAddr);
+    NS_LOG_INFO("REQUESTing INFORMed block " << blockID << " from " << senderAddr);
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)

@@ -57,6 +57,9 @@ struct bnsParams
     uint16_t kadBeta = 5;
     double kadFecOverhead = 0.25;
 
+    // mincast specific
+    bool mincastUseScores = false;
+
     // star topo specific
     std::string starLeafDataRate = "50Mbps";
     std::string starHubDataRate = "100Gbps";
@@ -111,6 +114,7 @@ int main(int argc, char *argv[])
     cmd.AddValue("kadAlpha", "Kadcast or Mincast: Set the alpha factor determining the number of parallel lookup requests.", params.kadAlpha);
     cmd.AddValue("kadBeta", "Kadcast or Mincast: Set the beta factor determining the number of parallel broadcast operations.", params.kadBeta);
     cmd.AddValue("kadFecOverhead", "Kadcast or Mincast: Set the FEC overhead factor.", params.kadFecOverhead);
+    cmd.AddValue("mincastUseScores", "Mincast: Use scores to determine sending BLOCK or INFORM message, instead of percentages.", params.mincastUseScores);
 
     cmd.AddValue("starLeafDataRate", "Set the data rate for each link", params.starLeafDataRate);
     cmd.AddValue("starHubRate", "Set the data rate for the star network hub", params.starHubDataRate);
@@ -141,6 +145,7 @@ int main(int argc, char *argv[])
     bns::MincastNode::kadAlpha = params.kadAlpha;
     bns::MincastNode::kadBeta = params.kadBeta;
     bns::MincastNode::kadFecOverhead = params.kadFecOverhead;
+    bns::MincastNode::mincastUseScores = params.mincastUseScores;
 
     ns3::RngSeedManager::SetSeed(time(0));
 

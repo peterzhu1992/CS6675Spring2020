@@ -67,6 +67,7 @@ public:
     static uint16_t kadAlpha;
     static uint16_t kadBeta;
     static double kadFecOverhead;
+    static bool mincastUseScores;
 
 protected:
     virtual void DoDispose(void); // inherited from Application base class.
