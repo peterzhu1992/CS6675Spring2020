@@ -81,32 +81,40 @@ void MincastNode::StartApplication() // Called at time specified by Start
 
     for (auto it : m_knownAddresses)
     {
-        if (it != m_address){
-            
+        if (it != m_address)
+        {
+
             ns3::Time temp = ns3::Seconds(p->GetValue());
-            while (temp < 0) {
+            while (temp < 0)
+            {
                 temp = ns3::Seconds(p->GetValue());
             }
             ns3::Simulator::Schedule(temp, &MincastNode::SendPingMessage, this, it);
         }
     }
-            
+
     ns3::Ptr<ns3::NormalRandomVariable> l = ns3::CreateObject<ns3::NormalRandomVariable>();
     l->SetAttribute("Mean", ns3::DoubleValue(30));
     l->SetAttribute("Variance", ns3::DoubleValue(10));
 
     // Lookup own node id
-    if(ns3::Seconds(l->GetValue()) <= 0) {
-        NS_LOG_INFO("Shit1");         
+    ns3::Time temp = ns3::Seconds(l->GetValue());
+    while (temp < 0)
+    {
+        temp = ns3::Seconds(l->GetValue());
     }
-    ns3::Simulator::Schedule(ns3::Seconds(l->GetValue()), &MincastNode::InitLookupNode, this, m_nodeID);
+    ns3::Simulator::Schedule(temp, &MincastNode::InitLookupNode, this, m_nodeID);
 
     // Refresh buckets periodically
     ns3::Ptr<ns3::NormalRandomVariable> x = ns3::CreateObject<ns3::NormalRandomVariable>();
     x->SetAttribute("Mean", ns3::DoubleValue(100));
     x->SetAttribute("Variance", ns3::DoubleValue(30));
     ns3::Time refreshTime = ns3::Seconds(x->GetValue());
-    ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
+    while (refreshTime < 0)
+    {
+        refreshTime = ns3::Seconds(x->GetValue());
+    }
+    // ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
 
     if (m_isMiner)
     {
@@ -309,7 +317,8 @@ void MincastNode::BroadcastBlock(Block &b)
         }
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
-        int nodeAddrLimit = nodeAddresses.size() - 2, ct = 0;
+
+        int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
         for (auto nAddr : nodeAddresses)
         {
             if (ct <= nodeAddrLimit)
@@ -598,8 +607,9 @@ void MincastNode::SendAvailable()
     x->SetAttribute("Mean", ns3::DoubleValue(100));
     x->SetAttribute("Variance", ns3::DoubleValue(25));
     ns3::Time sendTime = ns3::MilliSeconds(x->GetValue());
-    if(sendTime <= 0) {
-        NS_LOG_INFO("Shit5");         
+    while (sendTime < 0)
+    {
+        sendTime = ns3::MilliSeconds(x->GetValue());
     }
     m_nextSend = ns3::Simulator::Schedule(sendTime, &MincastNode::SendAvailable, this);
 
@@ -732,8 +742,9 @@ void MincastNode::HandleChunkMessage(ns3::Ipv4Address &senderAddr, nodeid_t &sen
         m_receivedFirstFullBlock = true;
         SetTTLB(c.blockID, ns3::Simulator::Now());
         ns3::Time delay = GetValidationDelay(b);
-        if(ns3::Seconds(delay) <= 0) {
-            NS_LOG_INFO("Shit");         
+        while (delay < 0)
+        {
+            delay = GetValidationDelay(b);
         }
         ns3::Simulator::Schedule(delay, &MincastNode::NotifyNewBlock, this, b, false);
         chunkMap.clear();
@@ -762,17 +773,18 @@ void MincastNode::HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t &s
 
 void MincastNode::HandleInformMessage(ns3::Ipv4Address &senderAddr, nodeid_t &senderID, uint64_t blockID)
 {
-    // if (m_seenBroadcasts[blockID].size() > 0)
-    // {
-    //     NS_LOG_INFO("Already started download of block");
-    //     return;
-    // }
-    int r = 3;
+    if (m_seenBroadcasts[blockID].size() > 0)
+    {
+        NS_LOG_INFO("Already started download of block");
+        return;
+    }
+    int r = 0;
     ns3::Time delay = ns3::Seconds(r);
-    // if(ns3::Seconds(delay) <= 0) {
-    //     NS_LOG_INFO("Shit");         
-    // }
-    ns3::Simulator::Schedule(delay, &MincastNode::RequestMissingBlock, this, senderAddr, blockID);
+    while (delay < 0)
+    {
+        delay = ns3::Seconds(r);
+    }
+    ns3::Simulator::Schedule(delay, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
     return;
 }
 
@@ -1061,6 +1073,10 @@ void MincastNode::PeriodicRefresh()
     x->SetAttribute("Mean", ns3::DoubleValue(MINCAST_BUCKET_REFRESH_TIMEOUT));
     x->SetAttribute("Variance", ns3::DoubleValue(100));
     ns3::Time refreshTime = ns3::Seconds(x->GetValue());
+    while (refreshTime < 0)
+    {
+        refreshTime = ns3::Seconds(x->GetValue());
+    }
     ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
 }
 
@@ -1079,14 +1095,18 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
 
     SendRequestMessage(senderAddr, blockID);
 
-    // ns3::Ptr<ns3::NormalRandomVariable> x = ns3::CreateObject<ns3::NormalRandomVariable>();
-    // x->SetAttribute("Mean", ns3::DoubleValue(8000));
-    // x->SetAttribute("Variance", ns3::DoubleValue(1000));
+    ns3::Ptr<ns3::NormalRandomVariable> x = ns3::CreateObject<ns3::NormalRandomVariable>();
+    x->SetAttribute("Mean", ns3::DoubleValue(3));
+    x->SetAttribute("Variance", ns3::DoubleValue(1));
 
-    // ns3::Time nextRequestTime = ns3::MilliSeconds(x->GetValue());
-    // ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
+    ns3::Time nextRequestTime = ns3::Seconds(x->GetValue());
+    while (nextRequestTime < 0)
+    {
+        nextRequestTime = ns3::Seconds(x->GetValue());
+    }
+    ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
 
-    NS_LOG_INFO("Requesting missing block " << blockID << " from " << senderAddr);
+    NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr);
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
@@ -1109,8 +1129,9 @@ void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blo
     x->SetAttribute("Variance", ns3::DoubleValue(3000));
 
     ns3::Time nextRequestTime = ns3::MilliSeconds(x->GetValue());
-    if(ns3::Seconds(nextRequestTime) <= 0) {
-        NS_LOG_INFO("Shit");         
+    while (nextRequestTime < 0)
+    {
+        nextRequestTime = ns3::MilliSeconds(x->GetValue());
     }
     ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestMissingBlock, this, senderAddr, blockID);
 
@@ -1148,8 +1169,9 @@ void MincastNode::RefreshNode(ns3::Ipv4Address &oldAddress, nodeid_t oldID, ns3:
 
     if (newID == m_nodeID)
         return;
-    if(ns3::Seconds(MINCAST_PING_TIMEOUT) <= 0) {
-        NS_LOG_INFO("Shit");         
+    if (ns3::Seconds(MINCAST_PING_TIMEOUT) <= 0)
+    {
+        NS_LOG_INFO("Shit");
     }
     ns3::EventId event = ns3::Simulator::Schedule(ns3::Seconds(MINCAST_PING_TIMEOUT), &MincastNode::RefreshTimeoutExpired, this, oldAddress, oldID);
     std::tuple<ns3::EventId, ns3::Ipv4Address, nodeid_t> eventTuple = std::make_tuple(event, newAddress, newID);
