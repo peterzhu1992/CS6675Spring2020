@@ -81,8 +81,13 @@ void KadcastNode::StartApplication() // Called at time specified by Start
 
     for (auto it : m_knownAddresses)
     {
-        if (it != m_address)
-            ns3::Simulator::Schedule(ns3::Seconds(p->GetValue()), &KadcastNode::SendPingMessage, this, it);
+        if (it != m_address){
+            ns3::Time temp = ns3::Seconds(p->GetValue());
+            while (temp < 0) {
+                temp = ns3::Seconds(p->GetValue());
+            }
+            ns3::Simulator::Schedule(temp, &KadcastNode::SendPingMessage, this, it);
+        }
     }
 
     ns3::Ptr<ns3::NormalRandomVariable> l = ns3::CreateObject<ns3::NormalRandomVariable>();
