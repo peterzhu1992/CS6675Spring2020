@@ -15,9 +15,11 @@
 
 #include "bitcoin-node.h"
 #include "kadcast-node.h"
-#include "vanilla-node.h"
+//#include "mincast-node.h"
 #include "bitcoin-data.h"
 #include "bitcoin-topology-helper.h"
+
+#include "mincast-node.h"
 
 NS_LOG_COMPONENT_DEFINE ("BNS");
 
@@ -40,15 +42,16 @@ struct bnsParams {
     uint32_t seed = 23;
     uint16_t nHours = 12;
     uint32_t nPeers = 100;
-    uint32_t nMiners = bns::btcNumPools;
+    //uint32_t nMiners = bns::btcNumPools;
+    uint32_t nMiners = 1;
     uint32_t nBootstrap = nPeers;
     double blockSizeFactor = 1.0;
     double blockIntervalFactor = 1.0;
     double byzantineFactor = 0.0;
-    std::string netStack = "vanilla";
+    std::string netStack = "mincast";
     std::string topo = "geo";
     
-    // vanilla specific
+    // mincast specific
     bool unsolicited = false;
 
     // kadcast specific
@@ -86,9 +89,19 @@ main (int argc, char *argv[])
     ns3::LogComponentEnable ("BNSBlockchain", ns3::LOG_LEVEL_INFO);
     ns3::LogComponentEnable ("BNSBitcoinMiner", ns3::LOG_LEVEL_INFO);
     ns3::LogComponentEnable ("BNSKadcastNode", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSVanillaNode", ns3::LOG_LEVEL_INFO);
-    ns3::LogComponentEnable ("BNSVanillaMessages", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable ("BNSMincastNode", ns3::LOG_LEVEL_INFO);
+    ns3::LogComponentEnable ("BNSMincastMessages", ns3::LOG_LEVEL_INFO);
     ns3::LogComponentEnable ("BNSKadcastMessages", ns3::LOG_LEVEL_INFO);
+
+    ns3::LogComponentEnable ("BNS", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinTopologyHelper", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBlockchain", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSBitcoinMiner", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSKadcastNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSMincastNode", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSMincastMessages", ns3::LOG_LEVEL_WARN);
+    ns3::LogComponentEnable ("BNSKadcastMessages", ns3::LOG_LEVEL_WARN);
 
 
     struct bnsParams params;
@@ -101,10 +114,10 @@ main (int argc, char *argv[])
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);
-    cmd.AddValue("net", "Set the network stack (vanilla or kadcast)", params.netStack);
+    cmd.AddValue("net", "Set the network stack (mincast or kadcast)", params.netStack);
     cmd.AddValue("topo", "Set the network topology (star or geo)", params.topo);
 
-    cmd.AddValue("unsolicited", "Vanilla: Enable unsolicited block transmission.", params.unsolicited);
+    cmd.AddValue("unsolicited", "Mincast: Enable unsolicited block transmission.", params.unsolicited);
 
     cmd.AddValue("kadK", "Kadcast: Set the bucket size k.", params.kadK);
     cmd.AddValue("kadAlpha", "Kadcast: Set the alpha factor determining the number of parallel lookup requests.", params.kadAlpha);
@@ -124,10 +137,10 @@ main (int argc, char *argv[])
     bns::BitcoinMiner::blockSizeFactor = params.blockSizeFactor;
     bns::BitcoinMiner::blockIntervalFactor = params.blockIntervalFactor;
 
-    if (params.unsolicited) {
-        NS_LOG_INFO ("Enabled unsolicited block relay.");
-        bns::VanillaNode::vanBroadcastType = bns::BroadcastType::UNSOLICITED;
-    }
+    // if (params.unsolicited) {
+    //     NS_LOG_INFO ("Enabled unsolicited block relay.");
+    //     bns::MincastNode::minBroadcastType = bns::BroadcastType::UNSOLICITED;
+    // }
 
     bns::KadcastNode::kadK = params.kadK;
     bns::KadcastNode::kadAlpha = params.kadAlpha;
@@ -235,7 +248,8 @@ buildGeoTopology (struct bnsParams& params) {
                 app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, false, 0);
                 apps.Add(app);
             }
-        } else {
+        }
+	else if (params.netStack == "mincast") {
             auto it = std::find(std::begin(miners), std::end(miners), i); 
             if (it != std::end(miners)) {// if the current index is a miner
                 auto index = std::distance(std::begin(miners), it); // get its index in miner list
@@ -246,10 +260,10 @@ buildGeoTopology (struct bnsParams& params) {
                     poolShare = bns::btcHashRateDistribution[index % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
                 }
                 double hashRate = poolShare * bns::btcTotalHashRate;
-                app = ns3::CreateObject<bns::VanillaNode> (nodeAddr, true, hashRate);
+                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, hashRate);
                 apps.Add(app);
             } else { 
-                app = ns3::CreateObject<bns::VanillaNode> (nodeAddr, false, 0);
+                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, false, 0);
                 apps.Add(app);
             }
         }
@@ -333,19 +347,20 @@ ns3::ApplicationContainer buildStarTopology (struct bnsParams& params) {
                 app = ns3::CreateObject<bns::KadcastNode> (nodeAddr, false, 0);
                 apps.Add(app);
             }
-        } else {
+        }
+	else if (params.netStack == "mincast") {
             if (i < params.nMiners) {
                 if (params.nMiners % bns::btcNumPools == 0) {
                     double poolShare = bns::btcHashRateDistribution[i % bns::btcNumPools]/(params.nMiners / bns::btcNumPools);
                     double hashRate = poolShare * bns::btcTotalHashRate;
-                    app = ns3::CreateObject<bns::VanillaNode> (nodeAddr, true, hashRate);
+                    app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, hashRate);
                     apps.Add(app);
                 } else if (params.nMiners == 1) {
-                    app = ns3::CreateObject<bns::VanillaNode> (nodeAddr, true, bns::btcTotalHashRate);
+                    app = ns3::CreateObject<bns::MincastNode> (nodeAddr, true, bns::btcTotalHashRate);
                     apps.Add(app);
                 }
             } else { 
-                app = ns3::CreateObject<bns::VanillaNode> (nodeAddr, false, 0);
+                app = ns3::CreateObject<bns::MincastNode> (nodeAddr, false, 0);
                 apps.Add(app);
             }
         }

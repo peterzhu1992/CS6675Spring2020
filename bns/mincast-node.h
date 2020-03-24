@@ -1,10 +1,16 @@
+/**
+ * This file contains declares the simple MincastNode class.
+ */
+
 #ifndef MINCAST_NODE_H
 #define MINCAST_NODE_H
 
+#include <algorithm>
+#include <bitset>
+#include <set>
 #include <unordered_map>
 #include <deque>
-#include <algorithm>
-
+#include <mutex>
 #include "ns3/application.h"
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
@@ -12,217 +18,294 @@
 #include "ns3/address.h"
 #include "ns3/boolean.h"
 #include "ns3/random-variable-stream.h"
+#include "ns3/socket.h"
 
 #include "bitcoin-node.h"
 #include "mincast-messages.h"
+#include "util.h"
 
-#define MIN_PORT 8334
-#define MIN_MAXCONN_OUT 8
-#define MIN_MAXCONN_IN 117
+#define MINCAST_ID_LEN 64 // FIXME: Using node ID length of 64 bits for now, since it fits a uint64_t distance variable.
+#define MINCAST_PING_TIMEOUT 10.0
+#define MINCAST_BUCKET_REFRESH_TIMEOUT 3600.0
+#define MINCAST_PORT 8334
+#define MINCAST_PACKET_SIZE 1433
 
-namespace std {
-template <>
-struct hash<ns3::Ipv4Address>
+namespace bns
 {
-    size_t operator()(const ns3::Ipv4Address& addr) const
-    {
-        return hash<uint32_t>()(addr.Get());
-    }
-};
-}
-
-namespace bns {
 
 class Address;
 class Socket;
 class Packet;
 
-enum class PeerType { IN, OUT };
-enum class BroadcastType { UNSOLICITED, SENDHEADERS, INV };
+typedef std::bitset<64> nodeid_t;
+typedef std::pair<ns3::Ipv4Address, nodeid_t> bentry_t;
 
-struct Peer
+struct MinChunk
 {
-    ns3::Ipv4Address address;
-    ns3::Ptr<ns3::Socket> socket;
-    PeerType type;
+    uint16_t chunkID;
+    uint64_t blockID;
+    uint64_t prevID;
+    uint32_t blockSize;
+    uint16_t chunkSize;
+    uint32_t blockHeight;
+    uint16_t nChunks;
 };
 
 class MincastNode : public BitcoinNode
 {
-    public:
-        MincastNode (ns3::Ipv4Address address, bool isMiner, double hashRate);
+public:
+    MincastNode(ns3::Ipv4Address address, bool isMiner, double hashRate);
 
-        virtual ~MincastNode (void);
+    virtual ~MincastNode(void);
 
-        static BroadcastType minBroadcastType;
-    protected:
-        virtual void DoDispose (void);           // inherited from Application base class.
+    /**
+         * \brief Schedule Broadcast
+         */
+    //void ScheduleBroadcast(int context, ns3::Time time, uint64_t blockID);
 
-        virtual void StartApplication (void);    // Called at time specified by Start
-        virtual void StopApplication (void);     // Called at time specified by Stop
+    static uint16_t kadK;
+    static uint16_t kadAlpha;
+    static uint16_t kadBeta;
+    static double kadFecOverhead;
 
-		/**
-		 * \brief Setup the listenSocket, start listening and register the required handlers.
-		 */
-		void InitListenSocket (void);
+protected:
+    virtual void DoDispose(void); // inherited from Application base class.
 
-		/** 
-		 * \brief Connect to other peers.
-		 */
-		void InitOutgoingConnection(void);
+    virtual void StartApplication(void); // Called at time specified by Start
+    virtual void StopApplication(void);  // Called at time specified by Stop
 
-        /**
+    /**
+         * \brief Generate a new (pseudo-)random node ID
+         */
+    nodeid_t GenerateNodeID();
+
+    /**
+         * \brief Generate a random ID in given interval.
+         */
+    nodeid_t RandomIDInInterval(uint64_t min, uint64_t max);
+
+    /**
+         * \brief Returns a random address from a bucket.
+         */
+    ns3::Ipv4Address RandomAddressFromBucket(short i);
+
+    /**
+         * \brief Calculate the distance between two IDs
+         */
+    uint64_t Distance(nodeid_t node1, nodeid_t node2);
+
+    /**
+         * \brief Calculate the appropriate bucket index for a nodeid_t
+         */
+    uint16_t BucketIndexFromID(nodeid_t node);
+
+    /**
+         * \brief Update the appropriate k-bucket when we see a node
+         */
+    void UpdateBucket(ns3::Ipv4Address address, nodeid_t node);
+
+    /**
+         * \brief Handle a packet received by the application
+         * \param socket the receiving socket
+         */
+    void HandleRead(ns3::Ptr<ns3::Socket> socket);
+    void HandleSent(ns3::Ptr<ns3::Socket> socketPtr, uint32_t availBytes);
+    void SendAvailable();
+
+    /**
+         * \brief Handle a received ping message.
+         */
+    void HandlePingMessage(ns3::Ipv4Address &addr, nodeid_t &senderID);
+
+    /**
+         * \brief Handle a received pong message.
+         */
+    void HandlePongMessage(ns3::Ipv4Address &addr, nodeid_t &senderID);
+
+    /**
+         * \brief Handle a received find_node message.
+         */
+    void HandleFindNodeMessage(ns3::Ipv4Address &sender, nodeid_t &senderID, nodeid_t &targetID);
+
+    /**
+         * \brief Handle a received nodes message.
+         */
+    void HandleNodesMessage(ns3::Ipv4Address &sender, nodeid_t &senderID, nodeid_t &targetID, std::vector<bentry_t> &nodes);
+
+    /**
+         * \brief Handle a received broadcast message.
+         */
+    void HandleChunkMessage(ns3::Ipv4Address &senderAddr, nodeid_t &senderID, MinChunk c, uint16_t height);
+
+    /**
+         * \brief Handle a received block request message.
+         */
+    void HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t &senderID, uint64_t blockID);
+
+    /**
+         * \brief Handle a inform block request message.
+         */
+    void HandleInformMessage(ns3::Ipv4Address &senderAddr, nodeid_t &senderID, uint64_t blockID);
+
+    /** 
+         * \brief Send a ping message to a node
+         */
+    void SendPingMessage(ns3::Ipv4Address &outgoingAddress);
+
+    /** 
+         * \brief Send a pong message to a node
+         */
+    void SendPongMessage(ns3::Ipv4Address &outgoingAddress);
+
+    /** 
+         * \brief Send a find_node message to a node
+         */
+    void SendFindNodeMessage(ns3::Ipv4Address &outgoingAddress, nodeid_t &targetID);
+
+    /**
+         * \brief Send a nodes message containing the k closest new nodes
+         */
+    void SendNodesMessage(ns3::Ipv4Address &outgoingAddress, nodeid_t &targetID, std::vector<bentry_t> &nodes);
+
+    /**
+         * \brief Send a broadcast message
+         */
+    void SendChunkMessage(ns3::Ipv4Address &outgoingAddress, MinChunk c, uint16_t height);
+
+    /**
+         * \brief Send a block request message
+         */
+    void SendRequestMessage(ns3::Ipv4Address &outgoingAddress, uint64_t blockID);
+
+    /**
+         * \brief Send a block inform message
+         */
+    void SendInformMessage(ns3::Ipv4Address &outgoingAddress, uint64_t blockID);
+
+    /**
+         * \brief Initializ a node lookup
+         */
+    void InitLookupNode(nodeid_t &targetID);
+
+    /**
+         * \brief Lookup a node based on the current state of m_nodeLookups map
+         */
+    void LookupNode(nodeid_t &targetID, bool queryAll = false);
+
+    /**
          * \brief Initialize a broadcast operation
          */
-        void InitBroadcast (Block& b);
+    void InitBroadcast(Block &b);
 
-		/**
-		 * \brief Returns a random known address
-		 */
-		ns3::Ipv4Address const RandomKnownAddress();
-
-		/**
-		 * \brief Add the packet to the send queue and send
-		 * \param packet the packet to send
-		 */
-		void SendPacket (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
-
-        /**
-         * \brief Sends the available number of bytes to the socket.
-         * Called by SendPacket and HandleSend
+    /**
+         * \brief Broadcast a chunk in the subtree of height
          */
-        void SendAvailable (ns3::Ptr<ns3::Socket> socketPtr);
+    void BroadcastBlock(Block &b);
 
-        /** 
-         * \brief Send a INV message
+    /**
+         * \brief Actually chunkify and send a block
          */
-        void SendInvMessage (ns3::Ptr<ns3::Socket> socketPtr, std::vector<uint64_t> inventory);
+    void SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height);
 
-        /** 
-         * \brief Send a GETHEADERS message
+    /**
+         * \brief Refresh a known node
          */
-        void SendGetHeadersMessage (ns3::Ptr<ns3::Socket> socketPtr, uint64_t startID, uint64_t stopID);
+    void RefreshNode(ns3::Ipv4Address &oldAddress, nodeid_t oldID, ns3::Ipv4Address &newAddress, nodeid_t newID);
 
-        /** 
-         * \brief Send a HEADERS message
+    /**
+         * \brief Is called when a kademlia ping message is expired.
          */
-        void SendHeadersMessage (ns3::Ptr<ns3::Socket> socketPtr, std::vector<uint64_t> inventory);
+    void RefreshTimeoutExpired(ns3::Ipv4Address &addr, nodeid_t node);
 
-        /** 
-         * \brief Send a GETDATA message
+    /**
+         * \brief Periodically refresh buckets (every KAD_BUCKET_REFRESH_TIMEOUT seconds)
          */
-        void SendGetDataMessage (ns3::Ptr<ns3::Socket> socketPtr, std::vector<uint64_t> inventory);
+    void PeriodicRefresh();
 
-        /** 
-         * \brief Send a BLOCK message
+    void RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID);
+
+    void RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID);
+    /**
+         * \brief Refresh all buckets
          */
-        void SendBlockMessage (ns3::Ptr<ns3::Socket> socketPtr, Block b);
+    void RefreshBuckets();
 
-
-		/**
-		 * \brief Handle an incoming connection
-		 * \param socketPtr the incoming connection socketPtr
-		 * \param from the address the connection is from
-		 */
-		void HandleAccept (ns3::Ptr<ns3::Socket> socketPtr, const ns3::Address& from);
-
-		/**
-		 * \brief Handle a successful outgoing connection
-		 * \param socketPtr the outgoing connection socketPtr
-		 */
-		void HandleConnect (ns3::Ptr<ns3::Socket> socketPtr);
-
-
-        /**
-         * \brief Callback which is called when space is available in send buffer
-         * \param socketPtr the sending socketPtr
-         * \param avail_bytes the number of bytes available
+    /**
+         * \brief Creates a fresh bucket or returns the existing one.
          */
-        void HandleSent (ns3::Ptr<ns3::Socket> socketPtr, uint32_t avail_bytes);
+    std::unordered_map<uint16_t, std::vector<bentry_t>>::iterator InitBucket(uint16_t i, std::unordered_map<uint16_t, std::vector<bentry_t>> &bm);
 
-        /**
-         * \brief Handle data which can be received on a socket
-         * \param socketPtr the receiving socketPtr
+    /**
+         * \brief Find a node in a bucket
          */
-        void HandleRead (ns3::Ptr<ns3::Socket> socketPtr);
+    std::vector<bentry_t>::iterator FindInBucket(ns3::Ipv4Address &addr, std::vector<bentry_t> &bucket);
 
-        /**
-         * \brief Handle an connection close
-         * \param socketPtr the connected socketPtr
+    /**
+         * \brief Find pending node refresh data
          */
-        void HandlePeerClose (ns3::Ptr<ns3::Socket> socketPtr);
+    std::unordered_map<nodeid_t, std::tuple<ns3::EventId, ns3::Ipv4Address, nodeid_t>>::iterator FindInRefreshes(nodeid_t nodeID);
 
-        /**
-         * \brief Handle an connection error
-         * \param socketPtr the connected socketPtr
+    /**
+         * \brief Encode a node id for transmission.
          */
-        void HandlePeerError (ns3::Ptr<ns3::Socket> socketPtr);
+    uint64_t EncodeID(std::bitset<MINCAST_ID_LEN> &bs);
 
-        /** 
-         * \brief Handle a received packet
+    /**
+         * \brief Decode a trasmitted node ID.
          */
-        void HandlePacket (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    std::bitset<MINCAST_ID_LEN> DecodeID(uint64_t encoded);
 
-        /** 
-         * \brief Process a received packet
+    /**
+         * \brief Find the K closest nodes to a given node id
          */
-        void ProcessPacket (ns3::Ptr<ns3::Socket> socketPtr);
+    std::map<uint64_t, bentry_t> FindKClosestNodes(nodeid_t targetID);
 
-        /**
-         * \brief Handle an INV message
+    /**
+         * \brief Mark that a node has already been queried for a specified find_node targetID
          */
-        void HandleInvMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    void MarkQueried(nodeid_t &targetID, nodeid_t &nodeID);
 
-        /**
-         * \brief Handle a GETDATA message
+    /**
+         * \brief Check if a node has already been queried for a targetID
          */
-        void HandleGetDataMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    bool IsQueried(nodeid_t &targetID, nodeid_t &nodeID);
 
-        /**
-         * \brief Handle a GETHEADERS message
+    /**
+         * \brief Terminate lookup
          */
-        void HandleGetHeadersMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    void TerminateLookup(nodeid_t &targetID);
 
-        /**
-         * \brief Handle a HEADERS message
+    void PrintBuckets();
+
+    /**
+         * \brief Create chunks out of blocks.
          */
-        void HandleHeadersMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    std::map<uint16_t, MinChunk> Chunkify(Block b);
 
-        /**
-         * \brief Handle a GETBLOCKS message
+    /**
+         * \brief Create blocks from chunks.
          */
-        void HandleGetBlocksMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    Block Dechunkify(std::map<uint16_t, MinChunk> chunks);
 
-        /**
-         * \brief Handle a BLOCK message
-         */
-        void HandleBlockMessage (ns3::Ptr<ns3::Socket> socketPtr, ns3::Ptr<ns3::Packet> packet);
+    nodeid_t m_nodeID;                                                                                            //!< The Kademlia node id of the Mincast peer.
+    std::unordered_map<uint16_t, std::vector<bentry_t>> m_buckets;                                                //!< The k-buckets (one for every 0 =< i =< MINCAST_ID_LEN)
+    std::unordered_map<nodeid_t, std::tuple<ns3::EventId, ns3::Ipv4Address, nodeid_t>> m_pendingRefreshes;        //!< Pending refreshed nodes.
+    std::unordered_map<nodeid_t, std::map<uint64_t, std::tuple<ns3::Ipv4Address, nodeid_t, bool>>> m_nodeLookups; //!< Lists all running node lookups, currently known k closest nodes by distance, and if they were queried
 
-        /**
-         * \brief Set if a peer already knows a block
-         */
-        void SetBlockKnown (ns3::Ipv4Address peerAddr, uint64_t blockID);
+    std::unordered_map<uint64_t, std::map<uint32_t, bool>> m_seenBroadcasts;
+    std::unordered_map<uint64_t, std::map<uint16_t, MinChunk>> m_receivedChunks;
+    std::unordered_map<uint64_t, uint16_t> m_maxSeenHeight;
+    std::unordered_map<uint64_t, bool> m_doneBlocks;
 
-        /**
-         * \brief Check if a peer knows a block
-         */
-        bool PeerKnowsBlock (ns3::Ipv4Address peerAddr, uint64_t blockID);
+    std::unordered_map<uint64_t, bool> m_requestedBlocks;
 
-        std::unordered_map<ns3::Ipv4Address, Peer>      m_peers;
-        uint32_t m_nInPeers;
-        uint32_t m_nOutPeers;
-        
-        std::unordered_map<ns3::Ipv4Address, ns3::Ptr<ns3::Packet>>	m_recvQueues;
+    std::deque<std::pair<ns3::Ipv4Address, ns3::Ptr<ns3::Packet>>> m_sendQueue;
 
-        std::unordered_map<ns3::Ipv4Address, std::deque<ns3::Ptr<ns3::Packet>>> m_sendQueues;
+    std::set<uint16_t> m_activeBuckets;
 
-        std::unordered_map<uint64_t, std::vector<ns3::Ipv4Address>> m_knownBlocks;
-
-        std::set<uint64_t> m_requestedBlocks;
+    bool m_sending;
+    ns3::EventId m_nextSend;
 };
 
-
-
-ns3::Ipv4Address GetSocketAddress (ns3::Ptr<ns3::Socket> socketPtr);
-}
-#endif
+} // namespace bns
+#endif /* MINCAST_NODE_H */
