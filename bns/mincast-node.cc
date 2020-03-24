@@ -267,6 +267,7 @@ void MincastNode::InitBroadcast(Block &b)
 
     m_doneBlocks[b.blockID] = true;
 
+    NS_LOG_INFO("InitBroadcast");
     //NS_LOG_INFO ("Initializing Broadcast " << b.blockID);
     if (m_maxSeenHeight.find(b.blockID) == std::end(m_maxSeenHeight))
     {
@@ -319,6 +320,8 @@ void MincastNode::BroadcastBlock(Block &b)
         // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
         int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
+        NS_LOG_INFO(kadBeta << " " << ct << " " << nodeAddresses.size());
+
         for (auto nAddr : nodeAddresses)
         {
             if (ct <= nodeAddrLimit)
@@ -942,6 +945,7 @@ void MincastNode::SendRequestMessage(ns3::Ipv4Address &outgoingAddress, uint64_t
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
+    NS_LOG_INFO("Send REQUEST to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);
@@ -966,6 +970,7 @@ void MincastNode::SendInformMessage(ns3::Ipv4Address &outgoingAddress, uint64_t 
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
+    NS_LOG_INFO("Send INFORM to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);
@@ -1106,7 +1111,7 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     }
     ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
 
-    NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr);
+    NS_LOG_INFO("Requesting INFORMed block " << blockID << " from " << senderAddr);
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
