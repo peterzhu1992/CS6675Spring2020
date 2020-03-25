@@ -34,6 +34,8 @@ double MincastNode::kadFecOverhead = 0.25;
 
 bool MincastNode::mincastUseScores = false;
 
+//int MincastNode::mincastScores = -1;
+
 MincastNode::MincastNode(ns3::Ipv4Address address, bool isMiner, double hashRate) : BitcoinNode(address, isMiner, hashRate), m_sending(false)
 {
     NS_LOG_FUNCTION(this);
@@ -269,7 +271,7 @@ void MincastNode::InitBroadcast(Block &b)
 
     m_doneBlocks[b.blockID] = true;
 
-    NS_LOG_INFO("InitBroadcast");
+    NS_LOG_INFO("InitBroadcast! NOW!!");
     //NS_LOG_INFO ("Initializing Broadcast " << b.blockID);
     if (m_maxSeenHeight.find(b.blockID) == std::end(m_maxSeenHeight))
     {
@@ -321,15 +323,48 @@ void MincastNode::BroadcastBlock(Block &b)
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
-        int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
 
-        for (auto nAddr : nodeAddresses)
+        if (mincastUseScores)
         {
-            if (ct <= nodeAddrLimit)
-                SendBlock(nAddr, b, bIndex);
-            else
-                SendInformMessage(nAddr, b.blockID);
-            ct++;
+            NS_LOG_INFO("Use Scores System");
+            NS_LOG_INFO(m_address);
+
+
+            //NS_LOG_INFO("numbers: " << subnetLatency);
+
+            for (auto nAddr : nodeAddresses)
+            {
+
+                //int subnetLatency = std::abs(int(m_address.Get()) - int(nAddr.Get())); // Use IP subnet changes to calculate latency
+
+                if (std::abs(int(m_address.Get()) - int(nAddr.Get())) >= 65535) // 2^16 consider subnets changes after the 1st 8bits field here
+                {
+                    SendBlock(nAddr, b, bIndex);
+                }
+                else
+                {
+                    SendInformMessage(nAddr, b.blockID);
+                }
+            }
+
+        }
+        else
+        {
+            NS_LOG_INFO("Use Percentage System");
+            NS_LOG_INFO(m_address);
+
+
+            int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
+
+            for (auto nAddr : nodeAddresses)
+            {
+
+                if (ct <= nodeAddrLimit)
+                    SendBlock(nAddr, b, bIndex);
+                else
+                    SendInformMessage(nAddr, b.blockID);
+                ct++;
+            }
         }
     }
 

@@ -305,6 +305,7 @@ protected:
     std::set<uint16_t> m_activeBuckets;
 
     bool m_sending;
+    int mincastScores = 0;
     ns3::EventId m_nextSend;
 };
 
