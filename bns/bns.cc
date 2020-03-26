@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     cmd.AddValue("nPeers", "Number of peers to build", params.nPeers);
     cmd.AddValue("nBootstrap", "Number of bootstrap peers", params.nBootstrap);
     cmd.AddValue("nMiners", "Number of miners", params.nMiners);
-    cmd.AddValue("nBlocks", "Number of blocks to mine, need nMiners=1, stop when reached, use 0 when infinite", params.nBlocks);
+    cmd.AddValue("nBlocks", "Number of blocks to mine, need nMiners=1 and proper nMinutes, stop mining when reached, use 0 when infinite", params.nBlocks);
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);

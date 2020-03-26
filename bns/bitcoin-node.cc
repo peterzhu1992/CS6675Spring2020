@@ -42,13 +42,14 @@ void BitcoinNode::NotifyNewValidBlock(Block &newBlock)
         if (nBlocks > 0)
         {
 
-            if (m_nMinedBlocks <= nBlocks) // Always mine one more block to ensure the previous one get broadcasted here
+            if (m_nMinedBlocks < nBlocks) // Always mine one more block to ensure the previous one get broadcasted here
             {
                 m_miner->StartMining();
             }
             else
             {
                 m_miner->StopMining();
+                //m_nMinedBlocks--; // Make sure the previous block has been broadcasted here
             }
         }
         else
@@ -57,15 +58,8 @@ void BitcoinNode::NotifyNewValidBlock(Block &newBlock)
         } 
     }
 
-    if (!m_isSelfish && !m_isByzantine && m_nMinedBlocks <= nBlocks)
-    {
+    if (!m_isSelfish && !m_isByzantine)
         InitBroadcast(newBlock);
-    }
-    else
-    {
-        //m_nMinedBlocks--; // Make sure the previous block has been broadcasted here
-        ns3::Simulator::Stop();
-    }
 }
 
 void BitcoinNode::NotifyNewBlock(Block &newBlock, bool mined)
