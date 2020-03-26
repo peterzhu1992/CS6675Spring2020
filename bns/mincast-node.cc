@@ -1147,7 +1147,7 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     }
     ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
 
-    NS_LOG_INFO("REQUESTing INFORMed block " << blockID << " from " << senderAddr);
+    NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr << " Next: +" << nextRequestTime << "s");
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
