@@ -1,8 +1,9 @@
 import matplotlib
-matplotlib.use('Agg')
+import numpy as np
+# matplotlib.use('Agg') <-- Uncomment if using windows or WSL
 import matplotlib.pyplot as plt
 
-fname = "../logs/kadcast_20_20"
+fname = "./logs/mincast5_60_500"
 file1 = open(fname+".log", "r")
 mining_dict = {}
 propagation_dict = {}
@@ -19,8 +20,8 @@ for x in file1:
             # print(split[7])
         if split[7] not in mining_dict:
             mining_dict[split[7]] = str(split[1]+"_"+split[0][1:-1])
-print(propagation_dict)
-print(mining_dict)
+# print(propagation_dict)
+# print(mining_dict)
 x = {}
 y = {}
 for k, v in sorted(propagation_dict.items(), key=lambda item: item[1]):
@@ -31,8 +32,8 @@ for k, v in sorted(propagation_dict.items(), key=lambda item: item[1]):
     else:
         x[blockID].append(v)
         y[blockID].append(y[blockID][len(y[blockID])-1]+1)
-print(x)
-print(y)
+# print(x)
+# print(y)
 fig, ax = plt.subplots(2)
 fig.suptitle('Vertically stacked subplots')
 print(int(fname.split("_")[-1]))
@@ -43,8 +44,10 @@ for item in x.items():
     propagation_delay = [number - item[1][0] for number in item[1]]
     ax[0].plot(propagation_delay, coverage)
     ax[1].plot(item[1], coverage)
-
+    
+ax.flat[0].set(yticks=(np.arange(0, 1, step=0.05)))
+ax.flat[1].set(yticks=(np.arange(0, 1, step=0.05)))
 ax.flat[0].set(xlabel="Propogation Delay", ylabel="Coverage")
 ax.flat[1].set(xlabel="Simulation Time", ylabel="Coverage")
 plt.legend(x.keys())
-plt.savefig(fname)
+plt.show()
