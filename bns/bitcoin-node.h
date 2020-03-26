@@ -58,6 +58,7 @@ public:
 
     Blockchain *GetBlockchain();
     bool IsMiner();
+    static uint32_t nBlocks;
 
     void SetByzantine(bool byzantine);
     bool IsByzantine();

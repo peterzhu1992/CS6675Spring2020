@@ -38,10 +38,12 @@ double median(std::vector<double> scores);
 struct bnsParams
 {
     uint32_t seed = 23;
-    uint16_t nMinutes = 15;
+    uint16_t nMinutes = 1000;
     uint32_t nPeers = 100;
-    uint32_t nMiners = bns::btcNumPools;
+    //uint32_t nMiners = bns::btcNumPools;
+    uint32_t nMiners = 1;
     uint32_t nBootstrap = nPeers;
+    uint32_t nBlocks = 0;
     double blockSizeFactor = 1.0;
     double blockIntervalFactor = 1.0;
     double byzantineFactor = 0.0;
@@ -102,6 +104,7 @@ int main(int argc, char *argv[])
     cmd.AddValue("nPeers", "Number of peers to build", params.nPeers);
     cmd.AddValue("nBootstrap", "Number of bootstrap peers", params.nBootstrap);
     cmd.AddValue("nMiners", "Number of miners", params.nMiners);
+    cmd.AddValue("nBlocks", "Number of blocks to mine, need nMiners=1, stop when reached, use 0 when infinite", params.nBlocks);
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);
@@ -129,6 +132,8 @@ int main(int argc, char *argv[])
 
     bns::BitcoinMiner::blockSizeFactor = params.blockSizeFactor;
     bns::BitcoinMiner::blockIntervalFactor = params.blockIntervalFactor;
+
+    bns::BitcoinNode::nBlocks = params.nBlocks;
 
     if (params.unsolicited)
     {
