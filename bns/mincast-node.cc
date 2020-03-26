@@ -28,7 +28,7 @@ uint16_t MincastNode::kadK = 20;
 
 uint16_t MincastNode::kadAlpha = 3;
 
-uint16_t MincastNode::kadBeta = 3;
+uint16_t MincastNode::kadBeta = 5;
 
 double MincastNode::kadFecOverhead = 0.25;
 
@@ -316,7 +316,7 @@ void MincastNode::BroadcastBlock(Block &b)
             }
         }
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
-        // NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
+        NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
         int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
         for (auto nAddr : nodeAddresses)
@@ -766,6 +766,7 @@ void MincastNode::HandleRequestMessage(ns3::Ipv4Address &senderAddr, nodeid_t &s
         return;
     }
     Block b = m_blockchain->GetBlockById(blockID);
+    NS_LOG_INFO("Found block:" << b.blockID << " to send to " << senderAddr);
     SendBlock(senderAddr, b, 0);
 
     return;
@@ -1096,7 +1097,7 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     SendRequestMessage(senderAddr, blockID);
 
     ns3::Ptr<ns3::NormalRandomVariable> x = ns3::CreateObject<ns3::NormalRandomVariable>();
-    x->SetAttribute("Mean", ns3::DoubleValue(3));
+    x->SetAttribute("Mean", ns3::DoubleValue(7));
     x->SetAttribute("Variance", ns3::DoubleValue(1));
 
     ns3::Time nextRequestTime = ns3::Seconds(x->GetValue());
@@ -1106,7 +1107,7 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     }
     ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
 
-    NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr);
+    NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr << " Next: +" << nextRequestTime << "s");
 }
 
 void MincastNode::RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)

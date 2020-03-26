@@ -28,7 +28,7 @@ uint16_t KadcastNode::kadK = 20;
 
 uint16_t KadcastNode::kadAlpha = 3;
 
-uint16_t KadcastNode::kadBeta = 3;
+uint16_t KadcastNode::kadBeta = 5;
 
 double KadcastNode::kadFecOverhead = 0.25;
 
@@ -316,6 +316,7 @@ void KadcastNode::BroadcastBlock(Block &b)
 
 void KadcastNode::SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height)
 {
+    NS_LOG_INFO("Sending block: " << b.blockID << " to: " << outgoingAddress);
     std::map<uint16_t, Chunk> chunkMap = Chunkify(b);
 
     std::vector<uint16_t> chunksToSend;

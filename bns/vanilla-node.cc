@@ -398,8 +398,8 @@ void VanillaNode::SendGetDataMessage(ns3::Ptr<ns3::Socket> socketPtr, std::vecto
 
 void VanillaNode::SendBlockMessage(ns3::Ptr<ns3::Socket> socketPtr, Block b)
 {
-    //ns3::Ipv4Address peerAddr = GetSocketAddress (socketPtr);
-    //NS_LOG_DEBUG ("Send BLOCK to " << peerAddr);
+    ns3::Ipv4Address peerAddr = GetSocketAddress (socketPtr);
+    NS_LOG_INFO("Sending block: " << b.blockID << " to: " << peerAddr);
 
     VanBlockHeader bh;
     bh.SetBlockId(b.blockID);
