@@ -1,5 +1,8 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-fname = "./logs/mincast_30_20"
+
+fname = "../logs/kadcast_20_20"
 file1 = open(fname+".log", "r")
 mining_dict = {}
 propagation_dict = {}
@@ -12,7 +15,7 @@ for x in file1:
         else:
             propagation_dict[str(split[1]+"_"+split[8])
                              ] = float(split[0][1:-1])
-    elif split[2] == "BNSMincastNode:SendBlock():":
+    elif split[2] == "BNSMincastNode:SendBlock():" or split[2] == "BNSVanillaNode:SendBlockMessage():" or split[2] == "BNSKadcastNode:SendBlock():":
             # print(split[7])
         if split[7] not in mining_dict:
             mining_dict[split[7]] = str(split[1]+"_"+split[0][1:-1])
@@ -20,23 +23,23 @@ print(propagation_dict)
 print(mining_dict)
 x = {}
 y = {}
-for item in propagation_dict.items():
-    print(item)
-    blockID = item[0].split("_")[1]
+for k, v in sorted(propagation_dict.items(), key=lambda item: item[1]):
+    blockID = k.split("_")[1]
     if blockID not in x:
         x[blockID] = [float(mining_dict[blockID].split("_")[1])]
         y[blockID] = [1]
     else:
-        x[blockID].append(item[1])
+        x[blockID].append(v)
         y[blockID].append(y[blockID][len(y[blockID])-1]+1)
 print(x)
 print(y)
 fig, ax = plt.subplots(2)
 fig.suptitle('Vertically stacked subplots')
-
+print(int(fname.split("_")[-1]))
 for item in x.items():
-    coverage = [float(number / int(fname.split("_")[-1]))
+    coverage = [float(number) / int(fname.split("_")[-1])
                 for number in y[item[0]]]
+    print(coverage)
     propagation_delay = [number - item[1][0] for number in item[1]]
     ax[0].plot(propagation_delay, coverage)
     ax[1].plot(item[1], coverage)
@@ -44,4 +47,4 @@ for item in x.items():
 ax.flat[0].set(xlabel="Propogation Delay", ylabel="Coverage")
 ax.flat[1].set(xlabel="Simulation Time", ylabel="Coverage")
 plt.legend(x.keys())
-plt.show()
+plt.savefig(fname)
