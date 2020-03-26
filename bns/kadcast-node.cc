@@ -28,7 +28,7 @@ uint16_t KadcastNode::kadK = 20;
 
 uint16_t KadcastNode::kadAlpha = 3;
 
-uint16_t KadcastNode::kadBeta = 3;
+uint16_t KadcastNode::kadBeta = 5;
 
 double KadcastNode::kadFecOverhead = 0.25;
 

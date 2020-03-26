@@ -52,10 +52,10 @@ struct bnsParams
     bool unsolicited = false;
 
     // kadcast specific
-    uint16_t kadK = 20;
+    uint16_t kadK = 100;
     uint16_t kadAlpha = 3;
-    uint16_t kadBeta = 5;
-    double kadFecOverhead = 0.25;
+    uint16_t kadBeta = 3;
+    double kadFecOverhead = 0.1;
 
     // star topo specific
     std::string starLeafDataRate = "50Mbps";
