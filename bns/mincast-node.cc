@@ -271,7 +271,6 @@ void MincastNode::InitBroadcast(Block &b)
 
     m_doneBlocks[b.blockID] = true;
 
-    NS_LOG_INFO("InitBroadcast!!!NOW!!!");
     //NS_LOG_INFO ("Initializing Broadcast " << b.blockID);
     if (m_maxSeenHeight.find(b.blockID) == std::end(m_maxSeenHeight))
     {
