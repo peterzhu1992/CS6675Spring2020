@@ -1,9 +1,10 @@
+import sys
 import matplotlib
 import numpy as np
 # matplotlib.use('Agg') <-- Uncomment if using windows or WSL
 import matplotlib.pyplot as plt
 
-fname = "./logs/mincast5_60_500"
+fname = sys.argv[1][:-4]
 file1 = open(fname+".log", "r")
 mining_dict = {}
 propagation_dict = {}
