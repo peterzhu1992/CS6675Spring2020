@@ -59,7 +59,9 @@ void BitcoinNode::NotifyNewValidBlock(Block &newBlock)
     }
 
     if (!m_isSelfish && !m_isByzantine)
+    {
         InitBroadcast(newBlock);
+    }
 }
 
 void BitcoinNode::NotifyNewBlock(Block &newBlock, bool mined)
