@@ -370,7 +370,7 @@ void MincastNode::BroadcastBlock(Block &b)
 
 void MincastNode::SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height)
 {
-    //NS_LOG_INFO("Sending BLOCK: " << b.blockID << " to: " << outgoingAddress);
+    NS_LOG_INFO("Sending BLOCK: " << b.blockID << " to: " << outgoingAddress);
     std::map<uint16_t, MinChunk> chunkMap = Chunkify(b);
 
     std::vector<uint16_t> chunksToSend;
