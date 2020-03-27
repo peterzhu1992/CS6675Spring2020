@@ -371,7 +371,7 @@ void MincastNode::BroadcastBlock(Block &b)
 
 void MincastNode::SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height)
 {
-    NS_LOG_INFO("Sending BLOCK: " << b.blockID << " to: " << outgoingAddress);
+    //NS_LOG_INFO("Sending BLOCK: " << b.blockID << " to: " << outgoingAddress);
     std::map<uint16_t, MinChunk> chunkMap = Chunkify(b);
 
     std::vector<uint16_t> chunksToSend;
@@ -979,7 +979,7 @@ void MincastNode::SendRequestMessage(ns3::Ipv4Address &outgoingAddress, uint64_t
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
-    NS_LOG_INFO("Send REQUEST to node " << eSenderID << " / " << outgoingAddress);
+    //NS_LOG_INFO("Send REQUEST to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);
@@ -1004,7 +1004,7 @@ void MincastNode::SendInformMessage(ns3::Ipv4Address &outgoingAddress, uint64_t 
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
-    NS_LOG_INFO("Send INFORM to node " << eSenderID << " / " << outgoingAddress);
+    //NS_LOG_INFO("Send INFORM to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);
