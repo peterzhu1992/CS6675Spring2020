@@ -67,6 +67,7 @@ public:
     static uint16_t kadAlpha;
     static uint16_t kadBeta;
     static double kadFecOverhead;
+    static bool mincastUseScores;
 
 protected:
     virtual void DoDispose(void); // inherited from Application base class.
@@ -304,6 +305,7 @@ protected:
     std::set<uint16_t> m_activeBuckets;
 
     bool m_sending;
+    int mincastScores = 0;
     ns3::EventId m_nextSend;
 };
 

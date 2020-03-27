@@ -32,6 +32,10 @@ uint16_t MincastNode::kadBeta = 5;
 
 double MincastNode::kadFecOverhead = 0.25;
 
+bool MincastNode::mincastUseScores = false;
+
+//int MincastNode::mincastScores = -1;
+
 MincastNode::MincastNode(ns3::Ipv4Address address, bool isMiner, double hashRate) : BitcoinNode(address, isMiner, hashRate), m_sending(false)
 {
     NS_LOG_FUNCTION(this);
@@ -57,7 +61,7 @@ void MincastNode::DoDispose(void)
 // Application Methods
 void MincastNode::StartApplication() // Called at time specified by Start
 {
-    NS_LOG_INFO("Starting node " << GetNode()->GetId() << ": " << m_address << " / " << EncodeID(m_nodeID));
+    NS_LOG_INFO("Starting node " << GetNode()->GetId() << ": " << m_address << " / " << EncodeID(m_nodeID) << " / mincastUseScores: " << std::boolalpha << mincastUseScores);
     m_isRunning = true;
     if (!m_socket)
     {
@@ -318,14 +322,46 @@ void MincastNode::BroadcastBlock(Block &b)
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
-        int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
-        for (auto nAddr : nodeAddresses)
+
+        if (mincastUseScores)
         {
-            if (ct <= nodeAddrLimit)
-                SendBlock(nAddr, b, bIndex);
-            else
-                SendInformMessage(nAddr, b.blockID);
-            ct++;
+            //NS_LOG_INFO("Use Scores System");
+            //NS_LOG_INFO(m_address);
+
+
+            for (auto nAddr : nodeAddresses)
+            {
+
+                //int subnetLatency = std::abs(int(m_address.Get()) - int(nAddr.Get())); // Use IP subnet changes to calculate latency
+
+                if (std::abs(int(m_address.Get()) - int(nAddr.Get())) >= 65535) // 2^16 consider subnets changes after the 1st 8bits field here
+                {
+                    SendBlock(nAddr, b, bIndex);
+                }
+                else
+                {
+                    SendInformMessage(nAddr, b.blockID);
+                }
+            }
+
+        }
+        else
+        {
+            //NS_LOG_INFO("Use Percentage System");
+            //NS_LOG_INFO(m_address);
+
+
+            int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
+
+            for (auto nAddr : nodeAddresses)
+            {
+
+                if (ct <= nodeAddrLimit)
+                    SendBlock(nAddr, b, bIndex);
+                else
+                    SendInformMessage(nAddr, b.blockID);
+                ct++;
+            }
         }
     }
 
@@ -334,7 +370,7 @@ void MincastNode::BroadcastBlock(Block &b)
 
 void MincastNode::SendBlock(ns3::Ipv4Address &outgoingAddress, Block &b, uint16_t height)
 {
-    NS_LOG_INFO("Sending block: " << b.blockID << " to: " << outgoingAddress);
+    //NS_LOG_INFO("Sending BLOCK: " << b.blockID << " to: " << outgoingAddress);
     std::map<uint16_t, MinChunk> chunkMap = Chunkify(b);
 
     std::vector<uint16_t> chunksToSend;
@@ -533,7 +569,7 @@ void MincastNode::HandleRead(ns3::Ptr<ns3::Socket> socket)
             uint64_t eSenderID = rh.GetSenderId();
             nodeid_t senderID = DecodeID(eSenderID);
 
-            NS_LOG_INFO("Got REQUEST from node: " << eSenderID << " / " << senderAddr);
+            //NS_LOG_INFO("Got REQUEST from node: " << eSenderID << " / " << senderAddr);
 
             uint64_t blockID = rh.GetBlockId();
 
@@ -548,7 +584,7 @@ void MincastNode::HandleRead(ns3::Ptr<ns3::Socket> socket)
             uint64_t eSenderID = rh.GetSenderId();
             nodeid_t senderID = DecodeID(eSenderID);
 
-            NS_LOG_INFO("Got INFORM from node: " << eSenderID << " / " << senderAddr);
+            //NS_LOG_INFO("Got INFORM from node: " << eSenderID << " / " << senderAddr);
 
             uint64_t blockID = rh.GetBlockId();
 
@@ -943,6 +979,7 @@ void MincastNode::SendRequestMessage(ns3::Ipv4Address &outgoingAddress, uint64_t
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
+    //NS_LOG_INFO("Send REQUEST to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);
@@ -967,6 +1004,7 @@ void MincastNode::SendInformMessage(ns3::Ipv4Address &outgoingAddress, uint64_t 
     ns3::Ptr<ns3::Packet> packet = ns3::Create<ns3::Packet>();
 
     uint64_t eSenderID = EncodeID(m_nodeID);
+    //NS_LOG_INFO("Send INFORM to node " << eSenderID << " / " << outgoingAddress);
 
     MincastReqHeader rh;
     rh.SetSenderId(eSenderID);

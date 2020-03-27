@@ -38,10 +38,12 @@ double median(std::vector<double> scores);
 struct bnsParams
 {
     uint32_t seed = 23;
-    uint16_t nMinutes = 15;
+    uint16_t nMinutes = 1000;
     uint32_t nPeers = 100;
-    uint32_t nMiners = bns::btcNumPools;
+    //uint32_t nMiners = bns::btcNumPools;
+    uint32_t nMiners = 1;
     uint32_t nBootstrap = nPeers;
+    uint32_t nBlocks = 0;
     double blockSizeFactor = 1.0;
     double blockIntervalFactor = 1.0;
     double byzantineFactor = 0.0;
@@ -56,6 +58,9 @@ struct bnsParams
     uint16_t kadAlpha = 3;
     uint16_t kadBeta = 3;
     double kadFecOverhead = 0.1;
+
+    // mincast specific
+    bool mincastUseScores = false;
 
     // star topo specific
     std::string starLeafDataRate = "50Mbps";
@@ -99,6 +104,7 @@ int main(int argc, char *argv[])
     cmd.AddValue("nPeers", "Number of peers to build", params.nPeers);
     cmd.AddValue("nBootstrap", "Number of bootstrap peers", params.nBootstrap);
     cmd.AddValue("nMiners", "Number of miners", params.nMiners);
+    cmd.AddValue("nBlocks", "Number of blocks to mine, need nMiners=1 and proper nMinutes, stop mining when reached, use 0 when infinite", params.nBlocks);
     cmd.AddValue("blockSizeFactor", "Set how big blocks are (as a factor of 1 MB)", params.blockSizeFactor);
     cmd.AddValue("blockIntervalFactor", "Set how fast blocks are produced are (as a factor of 10 minutes)", params.blockIntervalFactor);
     cmd.AddValue("byzantineFactor", "Set what part of nodes are byzantine", params.byzantineFactor);
@@ -111,6 +117,7 @@ int main(int argc, char *argv[])
     cmd.AddValue("kadAlpha", "Kadcast or Mincast: Set the alpha factor determining the number of parallel lookup requests.", params.kadAlpha);
     cmd.AddValue("kadBeta", "Kadcast or Mincast: Set the beta factor determining the number of parallel broadcast operations.", params.kadBeta);
     cmd.AddValue("kadFecOverhead", "Kadcast or Mincast: Set the FEC overhead factor.", params.kadFecOverhead);
+    cmd.AddValue("mincastUseScores", "Mincast: Use scores to determine sending BLOCK or INFORM message, instead of percentages.", params.mincastUseScores);
 
     cmd.AddValue("starLeafDataRate", "Set the data rate for each link", params.starLeafDataRate);
     cmd.AddValue("starHubRate", "Set the data rate for the star network hub", params.starHubDataRate);
@@ -125,6 +132,8 @@ int main(int argc, char *argv[])
 
     bns::BitcoinMiner::blockSizeFactor = params.blockSizeFactor;
     bns::BitcoinMiner::blockIntervalFactor = params.blockIntervalFactor;
+
+    bns::BitcoinNode::nBlocks = params.nBlocks;
 
     if (params.unsolicited)
     {
@@ -141,6 +150,7 @@ int main(int argc, char *argv[])
     bns::MincastNode::kadAlpha = params.kadAlpha;
     bns::MincastNode::kadBeta = params.kadBeta;
     bns::MincastNode::kadFecOverhead = params.kadFecOverhead;
+    bns::MincastNode::mincastUseScores = params.mincastUseScores;
 
     ns3::RngSeedManager::SetSeed(time(0));
 

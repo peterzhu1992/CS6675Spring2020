@@ -5,6 +5,8 @@ NS_LOG_COMPONENT_DEFINE("BNSBitcoinNode");
 namespace bns
 {
 
+uint32_t BitcoinNode::nBlocks = 0;
+
 BitcoinNode::BitcoinNode(ns3::Ipv4Address address, bool isMiner, double hashRate) : m_socket(0), m_address(address), m_isRunning(false), m_isMiner(isMiner), m_isSelfish(false), m_isByzantine(false), m_miner(nullptr), m_hashRate(hashRate), m_receivedFirstPartBlock(false), m_receivedFirstFullBlock(false), m_nMinedBlocks(0), m_totalMinedBlocksSize(0)
 {
     NS_LOG_FUNCTION(this);
@@ -34,7 +36,26 @@ void BitcoinNode::NotifyNewValidBlock(Block &newBlock)
     {
         // Restart mining immediately, validation delay is added before
         // NotifyNewValidBlock is called
-        m_miner->StartMining();
+        //m_miner->StartMining();
+
+
+        if (nBlocks > 0)
+        {
+
+            if (m_nMinedBlocks < nBlocks) // Always mine one more block to ensure the previous one get broadcasted here
+            {
+                m_miner->StartMining();
+            }
+            else
+            {
+                m_miner->StopMining();
+                //m_nMinedBlocks--; // Make sure the previous block has been broadcasted here
+            }
+        }
+        else
+        {
+            m_miner->StartMining();
+        } 
     }
 
     if (!m_isSelfish && !m_isByzantine)
