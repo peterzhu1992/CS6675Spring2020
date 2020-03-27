@@ -326,11 +326,9 @@ void MincastNode::BroadcastBlock(Block &b)
 
         if (mincastUseScores)
         {
-            NS_LOG_INFO("Use Scores System");
-            NS_LOG_INFO(m_address);
+            //NS_LOG_INFO("Use Scores System");
+            //NS_LOG_INFO(m_address);
 
-
-            //NS_LOG_INFO("numbers: " << subnetLatency);
 
             for (auto nAddr : nodeAddresses)
             {
@@ -350,8 +348,8 @@ void MincastNode::BroadcastBlock(Block &b)
         }
         else
         {
-            NS_LOG_INFO("Use Percentage System");
-            NS_LOG_INFO(m_address);
+            //NS_LOG_INFO("Use Percentage System");
+            //NS_LOG_INFO(m_address);
 
 
             int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
@@ -572,7 +570,7 @@ void MincastNode::HandleRead(ns3::Ptr<ns3::Socket> socket)
             uint64_t eSenderID = rh.GetSenderId();
             nodeid_t senderID = DecodeID(eSenderID);
 
-            NS_LOG_INFO("Got REQUEST from node: " << eSenderID << " / " << senderAddr);
+            //NS_LOG_INFO("Got REQUEST from node: " << eSenderID << " / " << senderAddr);
 
             uint64_t blockID = rh.GetBlockId();
 
@@ -587,7 +585,7 @@ void MincastNode::HandleRead(ns3::Ptr<ns3::Socket> socket)
             uint64_t eSenderID = rh.GetSenderId();
             nodeid_t senderID = DecodeID(eSenderID);
 
-            NS_LOG_INFO("Got INFORM from node: " << eSenderID << " / " << senderAddr);
+            //NS_LOG_INFO("Got INFORM from node: " << eSenderID << " / " << senderAddr);
 
             uint64_t blockID = rh.GetBlockId();
 
