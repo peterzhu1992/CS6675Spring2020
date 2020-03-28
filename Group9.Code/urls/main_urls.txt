@@ -1,0 +1,3 @@
+Our google drive for all the research papers and temporary things: https://drive.google.com/drive/folders/1luc-6o1OffFq1Pg0NIJYqe4xBFGWgMPv
+Our github for all the data and codes: https://github.com/peterzhu1992/CS6675Spring2020
+The original BNS repository from the author of kadcast: https://gitlab.tubit.tu-berlin.de/rohrer/bns-public
