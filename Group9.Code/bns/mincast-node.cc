@@ -322,6 +322,7 @@ void MincastNode::BroadcastBlock(Block &b)
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
+        int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
 
         if (mincastUseScores)
         {
@@ -340,7 +341,16 @@ void MincastNode::BroadcastBlock(Block &b)
                 }
                 else
                 {
-                    SendInformMessage(nAddr, b.blockID);
+//////////////////////////////////////////////////////////////////////
+// This is to combine the InformRatio and the Score System
+                    if (ct <= nodeAddrLimit)
+                        SendBlock(nAddr, b, bIndex);
+                    else
+                        SendInformMessage(nAddr, b.blockID);
+                    ct++;
+
+                    //SendInformMessage(nAddr, b.blockID);
+//////////////////////////////////////////////////////////////////////
                 }
             }
 
@@ -350,8 +360,6 @@ void MincastNode::BroadcastBlock(Block &b)
             //NS_LOG_INFO("Use Percentage System");
             //NS_LOG_INFO(m_address);
 
-
-            int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
 
             for (auto nAddr : nodeAddresses)
             {
