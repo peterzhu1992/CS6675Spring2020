@@ -16,7 +16,7 @@ There are several folders in this package.
 
 1. bns:
 
-bns is the bitcoin simulator written by the author of KadCast paper in C++ using NS-3 Library.
+bns is the blockchain network simulator written by the author of KadCast paper in C++ using NS-3 Library.
 We expand upon the original code base and implement our strategy of mincast on top of it.
 Please visit the author' s (Elias Rohrer) original repository for more information.
 We are only explaning our changes made on the original code base here.
@@ -95,5 +95,6 @@ You would see graphs for every log here.
 As for other information on data analysis and results, please check our final powerpoint for more information.
 Thank you very much.
 Group 9 (Akshat Shetty, Adhrit Shetty, Jiaxiang Zhu, Jin Hyung Park)
+
 
 
