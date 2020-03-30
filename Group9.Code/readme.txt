@@ -69,8 +69,8 @@ We are only explaning our changes made on the original code base here.
 We have a total of 8 scenarios & multiple runs across Vanilla, KadCast, and MinCast.
 Each scenario will be tested with:
 * unlimited blocks + 60 minutes
-* 10 blocks + 1000 minutes
 * 1 block + 1000 minutes
+* 10 blocks + 1000 minutes
 
 Each run will have a total of 500 peers, minimum of 1 block mined, and maximum of 1 working miner.
 
