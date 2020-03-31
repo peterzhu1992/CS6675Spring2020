@@ -73,7 +73,7 @@ Each scenario will be tested with:
 * 1 block + 1000 minutes
 * 10 blocks + 1000 minutes
 
-Each run will have a total of 500 peers, minimum of 1 block mined, and maximum of 1 working miner.
+Each run will have a total of 500 peers, minimum of 1 block mined, and 16 miners.
 
 - vanilla:
   This contains the logs of vanilla unsolicited, and vanilla solicited scenarios.
