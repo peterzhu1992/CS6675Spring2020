@@ -15,7 +15,7 @@ files = ["../logs/vanilla/ashetty71/vanilla_blocks_1_minutes_1000_miners_16_unso
          "../logs/mincast/ashetty71/mincast_noScore_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500",
          "../logs/mincast/jzhu340/mincast_score_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500"]
 # files = ["../logs/vanilla/ashetty71/vanilla_minutes_60_miners_16_solicitied_peers_500",
-#          "../logs/kadcast/ashetty71/kadcast_minutes_60_miners_16_kadBeta_5_peers_500",
+#          "../logs/kadcast/ashetty71/kadcast_minutes_60_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/ashetty71/mincast_noScore_minutes_60_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/ashetty71/mincast_score_minutes_60_miners_16_kadBeta_3_peers_500"]
 
