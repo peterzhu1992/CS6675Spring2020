@@ -26,7 +26,7 @@
 
 #define MINCAST_ID_LEN 64 // FIXME: Using node ID length of 64 bits for now, since it fits a uint64_t distance variable.
 #define MINCAST_PING_TIMEOUT 10.0
-#define MINCAST_BUCKET_REFRESH_TIMEOUT 3600.0
+#define MINCAST_BUCKET_REFRESH_TIMEOUT 300
 #define MINCAST_PORT 8334
 #define MINCAST_PACKET_SIZE 1433
 
@@ -225,7 +225,7 @@ protected:
 
     void RequestMissingBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID);
 
-    void RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID);
+    void RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID, int ct);
     /**
          * \brief Refresh all buckets
          */

@@ -322,12 +322,10 @@ void MincastNode::BroadcastBlock(Block &b)
         std::random_shuffle(nodeAddresses.begin(), nodeAddresses.end());
         NS_LOG_INFO("will broadcast to " << nodeAddresses.size() << " nodes");
 
-
         if (mincastUseScores)
         {
             //NS_LOG_INFO("Use Scores System");
             //NS_LOG_INFO(m_address);
-
 
             for (auto nAddr : nodeAddresses)
             {
@@ -343,15 +341,13 @@ void MincastNode::BroadcastBlock(Block &b)
                     SendInformMessage(nAddr, b.blockID);
                 }
             }
-
         }
         else
         {
             //NS_LOG_INFO("Use Percentage System");
             //NS_LOG_INFO(m_address);
 
-
-            int nodeAddrLimit = nodeAddresses.size() == kadBeta ? nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
+            int nodeAddrLimit = nodeAddresses.size() == kadBeta ? kadBeta == 5 ? nodeAddresses.size() - 3 : nodeAddresses.size() - 2 : nodeAddresses.size() - 1, ct = 0;
 
             for (auto nAddr : nodeAddresses)
             {
@@ -821,7 +817,7 @@ void MincastNode::HandleInformMessage(ns3::Ipv4Address &senderAddr, nodeid_t &se
     {
         delay = ns3::Seconds(r);
     }
-    ns3::Simulator::Schedule(delay, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
+    ns3::Simulator::Schedule(delay, &MincastNode::RequestInformedBlock, this, senderAddr, blockID, 10);
     return;
 }
 
@@ -1119,7 +1115,7 @@ void MincastNode::PeriodicRefresh()
     ns3::Simulator::Schedule(refreshTime, &MincastNode::PeriodicRefresh, this);
 }
 
-void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID)
+void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t blockID, int ct)
 {
     if (m_doneBlocks[blockID] || m_blockchain->HasBlock(blockID))
     {
@@ -1143,7 +1139,8 @@ void MincastNode::RequestInformedBlock(ns3::Ipv4Address &senderAddr, uint64_t bl
     {
         nextRequestTime = ns3::Seconds(x->GetValue());
     }
-    ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID);
+    if (ct > 0)
+        ns3::Simulator::Schedule(nextRequestTime, &MincastNode::RequestInformedBlock, this, senderAddr, blockID, ct - 1);
 
     NS_LOG_INFO("Requesting informed block " << blockID << " from " << senderAddr << " Next: +" << nextRequestTime << "s");
 }
