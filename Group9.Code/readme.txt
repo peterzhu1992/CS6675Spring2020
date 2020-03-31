@@ -66,21 +66,25 @@ We are only explaning our changes made on the original code base here.
 
 3. logs:
 
-We have a total of 8 scenarios & 16 runs across Vanilla, KadCast, and MinCast.
-Each scenario will be tested either with unlimited blocks + 60 minutes, or with a maximum of 10 blocks + 1000 minutes.
+We have a total of 8 scenarios & multiple runs across Vanilla, KadCast, and MinCast.
+Each scenario will be tested with:
+* unlimited blocks + 60 minutes
+* 1 block + 1000 minutes
+* 10 blocks + 1000 minutes
+
 Each run will have a total of 500 peers, minimum of 1 block mined, and maximum of 1 working miner.
 
 - vanilla:
-  This contains the logs of vanilla unsolicited (2 runs), and vanilla solicited (2 runs).
+  This contains the logs of vanilla unsolicited, and vanilla solicited scenarios.
 
 - kadcast:
-  This contains the logs of kadcast with 3 parallel broadcasts (2 runs), and kadcast with 5 parallel broadcasts (2 runs).
+  This contains the logs of kadcast with 3 parallel broadcasts, and kadcast with 5 parallel broadcasts.
 
 - mincast:
-  This contains the logs of mincast with 3 parallel broadcasts without using Score System (2 runs).
-  This contains the logs of mincast with 3 parallel broadcasts without using Score System (2 runs).
-  This contains the logs of mincast with 5 parallel broadcasts using Score System (2 runs).
-  This contains the logs of mincast with 5 parallel broadcasts using Score System (2 runs).
+  This contains the logs of mincast with 3 parallel broadcasts without using Score System.
+  This contains the logs of mincast with 3 parallel broadcasts without using Score System.
+  This contains the logs of mincast with 5 parallel broadcasts using Score System.
+  This contains the logs of mincast with 5 parallel broadcasts using Score System.
 
 
 ###############################################################################################
