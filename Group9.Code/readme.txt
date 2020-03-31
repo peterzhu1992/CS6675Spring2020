@@ -33,7 +33,7 @@ We are only explaning our changes made on the original code base here.
   The default parameters have also been changed both on the functionalities and the values.
   Parameters "mincastUseScores" and "nBlocks" are added for the Score System and for mined block limitation.
   MinCast is added as one of the options to run alongside Vanilla and KadCast.
-  We have also set the number of miners to 1 so the results can be expected and consistant for comparisons.
+  We have also set the number of miners to 16 following the parameters used by the KadCast Paper.
 
 - bitcoin-node.cc / bitcoin-node.h:
   This is the place where the Score System located.
