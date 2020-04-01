@@ -71,7 +71,6 @@ Each scenario will be tested with:
 * unlimited blocks + 60 minutes
 * unlimited blocks + 180 minutes
 * 1 block + 1000 minutes
-* 10 blocks + 1000 minutes
 
 Each run will have a total of 500 peers, minimum of 1 block mined, and 16 miners.
 
