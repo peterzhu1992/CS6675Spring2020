@@ -33,7 +33,7 @@ We are only explaning our changes made on the original code base here.
   The default parameters have also been changed both on the functionalities and the values.
   Parameters "mincastUseScores" and "nBlocks" are added for the Score System and for mined block limitation.
   MinCast is added as one of the options to run alongside Vanilla and KadCast.
-  We have also set the number of miners to 1 so the results can be expected and consistant for comparisons.
+  We have also set the number of miners to 16 following the parameters used by the KadCast Paper.
 
 - bitcoin-node.cc / bitcoin-node.h:
   This is the place where the Score System located.
@@ -69,10 +69,11 @@ We are only explaning our changes made on the original code base here.
 We have a total of 8 scenarios & multiple runs across Vanilla, KadCast, and MinCast.
 Each scenario will be tested with:
 * unlimited blocks + 60 minutes
+* unlimited blocks + 180 minutes
 * 1 block + 1000 minutes
 * 10 blocks + 1000 minutes
 
-Each run will have a total of 500 peers, minimum of 1 block mined, and maximum of 1 working miner.
+Each run will have a total of 500 peers, minimum of 1 block mined, and 16 miners.
 
 - vanilla:
   This contains the logs of vanilla unsolicited, and vanilla solicited scenarios.
