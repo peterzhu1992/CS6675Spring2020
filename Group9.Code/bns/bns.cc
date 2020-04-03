@@ -51,7 +51,7 @@ struct bnsParams
     std::string topo = "geo";
 
     // vanilla specific
-    bool unsolicited = true;
+    bool unsolicited = false;
 
     // kadcast specific
     uint16_t kadK = 100;
