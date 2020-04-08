@@ -6,22 +6,30 @@ import matplotlib.pyplot as plt
 
 # files = ["../logs/vanilla/ashetty71/vanilla_blocks_1_minutes_1000_miners_16_unsolicited_peers_500",
 #          "../logs/vanilla/jzhu340/vanilla_blocks_1_minutes_1000_miners_16_solicited_peers_500",
-#          "../logs/kadcast/adhrit/kadcast_blocks_1_minutes_1000_miners_16_kadBeta_3_peers_500",
-#          "../logs/mincast/adhrit/mincast_noScore_blocks_1_minutes_1000_miners_16_kadBeta_3_peers_500",
+#          "../logs/kadcast/ashetty71/kadcast_blocks_1_minutes_1000_miners_16_kadBeta_3_peers_500",
+#          "../logs/mincast/ashetty71/mincast_noScore_blocks_1_minutes_1000_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/jzhu340/mincast_score_blocks_1_minutes_1000_miners_16_kadBeta_3_peers_500"]
-files = ["../logs/vanilla/ashetty71/vanilla_blocks_1_minutes_1000_miners_16_unsolicited_peers_500",
-         "../logs/vanilla/jzhu340/vanilla_blocks_1_minutes_1000_miners_16_solicited_peers_500",
-         "../logs/kadcast/adhrit/kadcast_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500",
-         "../logs/mincast/ashetty71/mincast_noScore_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500",
-         "../logs/mincast/jzhu340/mincast_score_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500"]
+# files = ["../logs/vanilla/ashetty71/vanilla_blocks_1_minutes_1000_miners_16_unsolicited_peers_500",
+#          "../logs/vanilla/jzhu340/vanilla_blocks_1_minutes_1000_miners_16_solicited_peers_500",
+#          "../logs/kadcast/ashetty71/kadcast_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500",
+#          "../logs/mincast/ashetty71/mincast_noScore_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500",
+#          "../logs/mincast/jzhu340/mincast_score_blocks_1_minutes_1000_miners_16_kadBeta_5_peers_500"]
 # files = ["../logs/vanilla/ashetty71/vanilla_minutes_60_miners_16_solicitied_peers_500",
 #          "../logs/kadcast/ashetty71/kadcast_minutes_60_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/ashetty71/mincast_noScore_minutes_60_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/jzhu340/mincast_score_minutes_60_miners_16_kadBeta_3_peers_500"]
-# files = ["../logs/vanilla/ashetty71/vanilla_minutes_180_miners_16_solicitied_peers_500",
-#          "../logs/kadcast/ashetty71/kadcast_minutes_180_miners_16_kadBeta_3_peers_500",
-#          "../logs/mincast/ashetty71/mincast_noScore_minutes_180_miners_16_kadBeta_3_peers_500",
+# files = ["../logs/vanilla/ashetty71/vanilla_minutes_60_miners_16_solicitied_peers_500",
+#          "../logs/kadcast/ashetty71/kadcast_minutes_60_miners_16_kadBeta_5_peers_500",
+#          "../logs/mincast/ashetty71/mincast_noScore_minutes_60_miners_16_kadBeta_5_peers_500",
+#          "../logs/mincast/jzhu340/mincast_score_minutes_60_miners_16_kadBeta_5_peers_500"]
+# files = ["../logs/vanilla/adhrit/vanilla_minutes_180_miners_16_solicitied_peers_500",
+#          "../logs/kadcast/adhrit/kadcast_minutes_180_miners_16_kadBeta_3_peers_500",
+#          "../logs/mincast/adhrit/mincast_noScore_minutes_180_miners_16_kadBeta_3_peers_500",
 #          "../logs/mincast/jzhu340/mincast_score_minutes_180_miners_16_kadBeta_3_peers_500"]
+files = ["../logs/vanilla/adhrit/vanilla_minutes_180_miners_16_solicitied_peers_500",
+         "../logs/kadcast/adhrit/kadcast_minutes_180_miners_16_kadBeta_5_peers_500",
+         "../logs/mincast/ashetty71/mincast_noScore_minutes_180_miners_16_kadBeta_5_peers_500",
+         "../logs/mincast/jzhu340/mincast_score_minutes_180_miners_16_kadBeta_5_peers_500"]
 
 for fname in files:
     file = open(fname+".log", "r")
@@ -70,10 +78,14 @@ for fname in files:
     plt.plot(propagation_delay, coverage)
 
 plt.yticks(np.arange(0, 1, step=0.05))
-plt.xlabel = "Propogation Delay"
-plt.ylabel = "Coverage"
+plt.xlabel("Propogation Delay")
+plt.ylabel("Coverage")
 # plt.legend(["Vanilla Unsolicited", "Vanilla Solicited", "KadCast kadBeta=3",
 #             "MinCast noScore kadBeta=3", "MinCast Score kadBeta=3"])
-plt.legend(["Vanilla Unsolicited", "Vanilla Solicited", "KadCast kadBeta=5",
+# plt.legend(["Vanilla Unsolicited", "Vanilla Solicited", "KadCast kadBeta=5",
+#             "MinCast noScore kadBeta=5", "MinCast Score kadBeta=5"])
+# plt.legend(["Vanilla Solicited", "KadCast kadBeta=3",
+#             "MinCast noScore kadBeta=3", "MinCast Score kadBeta=3"])
+plt.legend(["Vanilla Solicited", "KadCast kadBeta=5",
             "MinCast noScore kadBeta=5", "MinCast Score kadBeta=5"])
 plt.show()
