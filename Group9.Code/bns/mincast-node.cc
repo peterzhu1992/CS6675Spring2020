@@ -326,19 +326,20 @@ void MincastNode::BroadcastBlock(Block &b)
         {
             //NS_LOG_INFO("Use Scores System");
             //NS_LOG_INFO(m_address);
-
+            int ct = kadBeta == 3 ? 1 : 2;
             for (auto nAddr : nodeAddresses)
             {
 
                 //int subnetLatency = std::abs(int(m_address.Get()) - int(nAddr.Get())); // Use IP subnet changes to calculate latency
 
-                if (std::abs(int(m_address.Get()) - int(nAddr.Get())) >= 65535) // 2^16 consider subnets changes after the 1st 8bits field here
+                if (std::abs(int(m_address.Get()) - int(nAddr.Get())) >= 65535 || ct == 0) // 2^16 consider subnets changes after the 1st 8bits field here
                 {
                     SendBlock(nAddr, b, bIndex);
                 }
                 else
                 {
                     SendInformMessage(nAddr, b.blockID);
+                    ct--;
                 }
             }
         }
