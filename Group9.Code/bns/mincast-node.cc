@@ -326,7 +326,7 @@ void MincastNode::BroadcastBlock(Block &b)
         {
             //NS_LOG_INFO("Use Scores System");
             //NS_LOG_INFO(m_address);
-            int ct = kadBeta == 3 ? 1 : 2;
+            int ct = nodeAddresses.size() == kadBeta ? kadBeta == 3 ? 1 : 2 : 0;
             for (auto nAddr : nodeAddresses)
             {
 
